@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donos do Palpite - Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f0f0; }
+
+        header {
+            background: #1a1a2e;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { font-size: 18px; }
+        .btn-logout {
+            background: #e31d1a;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .admin-nav {
+            background: #16213e;
+            display: flex;
+            gap: 0;
+            overflow-x: auto;
+        }
+        .nav-tab {
+            color: #aaa;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+            transition: 0.2s;
+        }
+        .nav-tab.active { color: white; border-bottom-color: #e31d1a; }
+
+        .tab-content { display: none; padding: 20px; }
+        .tab-content.active { display: block; }
+
+        /* ===== JOGOS ===== */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .game-editor {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .game-editor h4 {
+            color: #1a4a7c;
+            margin-bottom: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+
+        .team-editor {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .team-editor.drag-over { border-color: #e31d1a; background: #fff5f5; }
+
+        .team-logo-preview {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #eee;
+            cursor: pointer;
+        }
+
+        .team-logo-placeholder {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .team-info { flex: 1; }
+        .team-info input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .team-info input:focus { border-color: #e31d1a; outline: none; }
+
+        .upload-hint { font-size: 10px; color: #999; }
+
+        .btn-apply {
+            background: #e31d1a;
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+        .btn-apply:hover { background: #c0150f; }
+
+        .apply-success {
+            display: none;
+            background: #e0ffe0;
+            color: #1a7c1a;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        /* ===== APOSTAS ===== */
+        .orders-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .orders-header h3 { color: #1a4a7c; }
+
+        .search-bar {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            width: 200px;
+        }
+
+        .orders-table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            font-size: 13px;
+        }
+
+        thead { background: #1a4a7c; color: white; }
+        th { padding: 12px 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fafafa; }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .badge-green { background: #e0ffe0; color: #1a7c1a; }
+        .badge-yellow { background: #fff8e0; color: #7c6a1a; }
+
+        .btn-view {
+            background: #1a4a7c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* Modal espelho */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            width: 90%;
+            max-width: 450px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h3 { color: #1a4a7c; margin-bottom: 15px; }
+        .modal-close {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .mirror-game {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+        .mirror-game:last-child { border-bottom: none; }
+        .mirror-chosen { color: #e31d1a; font-weight: bold; }
+
+        /* Stats cards */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .stat-card .number { font-size: 28px; font-weight: bold; color: #e31d1a; }
+        .stat-card .label { font-size: 12px; color: #777; margin-top: 5px; }
+
+        /* Concurso config */
+        .config-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .config-card h3 { color: #1a4a7c; margin-bottom: 15px; font-size: 15px; }
+        .config-row { display: flex; gap: 15px; flex-wrap: wrap; }
+        .config-group { flex: 1; min-width: 150px; }
+        .config-group label { display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 5px; }
+        .config-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>⚙️ Painel Admin — Donos do Palpite</h1>
+    <button class="btn-logout" onclick="logout()">Sair</button>
+</header>
+
+<div class="admin-nav">
+    <div class="nav-tab active" onclick="switchAdminTab('jogos')">⚽ Jogos</div>
+    <div class="nav-tab" onclick="switchAdminTab('apostas')">📋 Apostas</div>
+    <div class="nav-tab" onclick="switchAdminTab('config')">🔧 Configurações</div>
+</div>
+
+<!-- ===== ABA JOGOS ===== -->
+<div class="tab-content active" id="tab-jogos">
+    <h3 style="color:#1a4a7c;margin-bottom:15px;">⚽ Gerenciar Jogos do Concurso</h3>
+    <p style="font-size:13px;color:#777;margin-bottom:20px;">
+        Clique no escudo para fazer upload da imagem do time. Edite os nomes e clique em <strong>Aplicar</strong>.
+    </p>
+
+    <div class="games-grid" id="games-editor"></div>
+
+    <button class="btn-apply" onclick="applyGames()">✅ Aplicar e Publicar Jogos</button>
+    <div class="apply-success" id="apply-success">✅ Jogos publicados com sucesso! A página principal foi atualizada.</div>
+</div>
+
+<!-- ===== ABA APOSTAS ===== -->
+<div class="tab-content" id="tab-apostas">
+    <div class="stats-cards" id="stats-cards"></div>
+
+    <div class="orders-header">
+        <h3>📋 Todas as Apostas</h3>
+        <input class="search-bar" type="text" placeholder="🔍 Buscar por nome..." oninput="filterOrders(this.value)">
+    </div>
+
+    <div class="orders-table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Horário</th>
+                    <th>Usuário</th>
+                    <th>Contato</th>
+                    <th>Apostas</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Espelho</th>
+                </tr>
+            </thead>
+            <tbody id="orders-tbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ===== ABA CONFIG ===== -->
+<div class="tab-content" id="tab-config">
+    <div class="config-card">
+        <h3>🏆 Configurações do Concurso</h3>
+        <div class="config-row">
+            <div class="config-group">
+                <label>Número do Concurso</label>
+                <input type="text" id="cfg-concurso" placeholder="Ex: 001">
+            </div>
+            <div class="config-group">
+                <label>Data do Concurso</label>
+                <input type="date" id="cfg-data">
+            </div>
+        </div>
+        <br>
+        <button class="btn-apply" onclick="saveConfig()">💾 Salvar Configurações</button>
+    </div>
+
+    <div class="config-card">
+        <h3>🔑 Alterar Senha Admin</h3>
+        <div class="config-row">
+            <div class="config-group">
+                <label>Nova Senha</label>
+                <input type="password" id="cfg-senha" placeholder="Nova senha">
+            </div>
+            <div class="config-group">
+                <label>Confirmar Senha</label>
+                <input type="password" id="cfg-senha2" placeholder="Repita a senha">
+            </div>
+        </div>
+        <br>
+        <button class="btn-apply" onclick="changeAdminPass()">🔒 Alterar Senha</button>
+    </div>
+</div>
+
+<!-- Modal Espelho -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+    <div class="modal">
+        <button class="modal-close" onclick="document.getElementById('modal-overlay').classList.remove('open')">✕</button>
+        <h3>🔍 Espelho da Aposta</h3>
+        <div id="modal-content"></div>
+    </div>
+</div>
+
+<!-- Input de upload oculto -->
+<input type="file" id="upload-input" accept="image/*" style="display:none" onchange="handleUpload(event)">
+
+<script>
+    let currentUploadTarget = null;
+    let adminGames = JSON.parse(localStorage.getItem('adminGames') || '[]');
+
+    // Inicializa 10 jogos se vazio
+    if (adminGames.length === 0) {
+        for (let i = 0; i < 10; i++) {
+            adminGames.push({
+                id: i,
+                home: `Time Casa ${i+1}`,
+                away: `Time Visitante ${i+1}`,
+                homeImg: '',
+                awayImg: ''
+            });
+        }
+    }
+
+    function renderGamesEditor() {
+        const container = document.getElementById('games-editor');
+        container.innerHTML = adminGames.map((game, i) => `
+            <div class="game-editor">
+                <h4>Jogo ${i+1}</h4>
+
+                <div class="team-editor" id="drop-home-${i}"
+                    ondragover="event.preventDefault();this.classList.add('drag-over')"
+                    ondragleave="this.classList.remove('drag-over')"
+                    ondrop="handleDrop(event, ${i}, 'home')">
+                    ${game.homeImg
+                        ? `<img src="${game.homeImg}" class="team-logo-preview" onclick="triggerUpload(${i},'home')">`
+                        : `<div class="team-logo-placeholder" onclick="triggerUpload(${i},'home')">🛡️</div>`
+                    }
+                    <div class="team-info">
+                        <input type="text" value="${game.home}" id="home-name-${i}" placeholder="Nome do time da casa">
+                        <div class="upload-hint">📁 Clique no escudo ou arraste a imagem</div>
+                    </div>
+                </div>
+
+                <div style="text-align:center;color:#999;font-size:12px;margin:5px 0;">✕ EMPATE ✕</div>
+
+                <div class="team-editor" id="drop-away-${i}"
+                    ondragover="event.preventDefault();this.classList.add('drag-over')"
+                    ondragleave="this.classList.remove('drag-over')"
+                    ondrop="handleDrop(event, ${i}, 'away')">
+                    ${game.awayImg
+                        ? `<img src="${game.awayImg}" class="team-logo-preview" onclick="triggerUpload(${i},'away')">`
+                        : `<div class="team-logo-placeholder" onclick="triggerUpload(${i},'away')">🛡️</div>`
+                    }
+                    <div class="team-info">
+                        <input type="text" value="${game.away}" id="away-name-${i}" placeholder="Nome do time visitante">
+                        <div class="upload-hint">📁 Clique no escudo ou arraste a imagem</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function triggerUpload(gameIdx, side) {
+        currentUploadTarget = { gameIdx, side };
+        document.getElementById('upload-input').click();
+    }
+
+    function handleUpload(event) {
+        const file = event.target.files[0];
+        if (!file || !currentUploadTarget) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const { gameIdx, side } = currentUploadTarget;
+            if (side === 'home') adminGames[gameIdx].homeImg = e.target.result;
+            else adminGames[gameIdx].awayImg = e.target.result;
+            renderGamesEditor();
+        };
+        reader.readAsDataURL(file);
+        event.target.value = '';
+    }
+
+    function handleDrop(event, gameIdx, side) {
+        event.preventDefault();
+        document.getElementById(`drop-${side}-${gameIdx}`).classList.remove('drag-over');
+        const file = event.dataTransfer.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (side === 'home') adminGames[gameIdx].homeImg = e.target.result;
+            else adminGames[gameIdx].awayImg = e.target.result;
+            renderGamesEditor();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function applyGames() {
+        // Salva nomes editados
+        adminGames.forEach((game, i) => {
+            game.home = document.getElementById(`home-name-${i}`).value;
+            game.away = document.getElementById(`away-name-${i}`).value;
+        });
+
+        localStorage.setItem('adminGames', JSON.stringify(adminGames));
+
+        const success = document.getElementById('apply-success');
+        success.style.display = 'block';
+        setTimeout(() => success.style.display = 'none', 3000);
+    }
+
+    // ===== APOSTAS =====
+    function renderOrders(filter = '') {
+        const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+        const tbody = document.getElementById('orders-tbody');
+
+        const filtered = orders.filter(o =>
+            o.user?.toLowerCase().includes(filter.toLowerCase()) ||
+            o.email?.toLowerCase().includes(filter.toLowerCase())
+        );
+
+        // Stats
+        const totalArrecadado = orders.reduce((s, o) => s + (o.total || 0), 0);
+        document.getElementById('stats-cards').innerHTML = `
+            <div class="stat-card"><div class="number">${orders.length}</div><div class="label">Total de Apostas</div></div>
+            <div class="stat-card"><div class="number">R$ ${totalArrecadado.toFixed(2)}</div><div class="label">Total Arrecadado</div></div>
+            <div class="stat-card"><div class="number">${new Set(orders.map(o=>o.email)).size}</div><div class="label">Usuários Únicos</div></div>
+        `;
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#999;padding:30px;">Nenhuma aposta encontrada.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map((order, i) => `
+            <tr>
+                <td><strong>#${i+1}</strong></td>
+                <td>${order.date || '-'}</td>
+                <td>
+                    <strong>${order.user || '-'}</strong><br>
+                    <small style="color:#999">${order.email || ''}</small>
+                </td>
+                <td>${order.telefone || '-'}</td>
+                <td>${order.bets?.length || 0} aposta(s)</td>
+                <td><strong>R$ ${(order.total || 0).toFixed(2)}</strong></td>
+                <td><span class="badge badge-green">✅ Pago</span></td>
+                <td><button class="btn-view" onclick="viewMirror(${i})">🔍 Ver</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function filterOrders(val) { renderOrders(val); }
+
+    function viewMirror(index) {
+        const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+        const order = orders[index];
+        const games = JSON.parse(localStorage.getItem('adminGames') || '[]');
+
+        if (!order) return;
+
+        const optionNames = ['Casa', 'Empate', 'Visitante'];
+
+        let html = `
+            <p style="font-size:13px;color:#555;margin-bottom:15px;">
+                <strong>${order.user}</strong> — ${order.date}<br>
+                📞 ${order.telefone || 'Não informado'}<br>
+                💰 Total: <strong>R$ ${(order.total||0).toFixed(2)}</strong>
+            </p>
+        `;
+
+        order.bets?.forEach((bet, bi) => {
+            html += `<div style="margin-bottom:15px;padding:10px;background:#f9f9f9;border-radius:8px;">
+                <strong style="color:#1a4a7c;">Aposta ${bi+1} — R$ ${bet.price?.toFixed(2)}</strong>`;
+
+            bet.selections?.forEach((sel, gi) => {
+                const game = games[gi] || { home: `Time A`, away: `Time B` };
+                const chosen = sel.map(idx => {
+                    if (idx === 0) return game.home;
+                    if (idx === 1) return 'Empate';
+                    return game.away;
+                });
+                html += `<div class="mirror-game">
+                    <span style="color:#555">${game.home} x ${game.away}:</span>
+                    <span class="mirror-chosen"> ${chosen.join(' / ')}</span>
+                </div>`;
+            });
+
+            html += `</div>`;
+        });
+
+        document.getElementById('modal-content').innerHTML = html;
+        document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    function closeModal(e) {
+        if (e.target === document.getElementById('modal-overlay')) {
+            document.getElementById('modal-overlay').classList.remove('open');
+        }
+    }
+
+    // ===== CONFIG =====
+    function saveConfig() {
+        const config = {
+            concurso: document.getElementById('cfg-concurso').value,
+            data: document.getElementById('cfg-data').value
+        };
+        localStorage.setItem('concursoConfig', JSON.stringify(config));
+        alert('✅ Configurações salvas!');
+    }
+
+    function changeAdminPass() {
+        const s1 = document.getElementById('cfg-senha').value;
+        const s2 = document.getElementById('cfg-senha2').value;
+        if (!s1 || s1 !== s2) { alert('Senhas não coincidem!'); return; }
+        localStorage.setItem('adminPass', s1);
+        alert('✅ Senha alterada!');
+    }
+
+    function switchAdminTab(tab) {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        event.target.classList.add('active');
+        if (tab === 'apostas') renderOrders();
+        if (tab === 'config') loadConfig();
+    }
+
+    function loadConfig() {
+        const config = JSON.parse(localStorage.getItem('concursoConfig') || '{}');
+        if (config.concurso) document.getElementById('cfg-concurso').value = config.concurso;
+        if (config.data) document.getElementById('cfg-data').value = config.data;
+    }
+
+    function logout() {
+        window.location.href = 'login.html';
+    }
+
+    // Proteção de rota admin
+    window.onload = () => {
+        renderGamesEditor();
+        renderOrders();
+    };
+</script>
+</body>
+</html>

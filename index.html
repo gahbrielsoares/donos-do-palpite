@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donos do Palpite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding-bottom: 160px; }
+
+        header {
+            background: #e31d1a;
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left { font-size: 13px; }
+        .header-title { font-size: 16px; font-weight: bold; text-align: center; }
+        .header-right { font-size: 12px; text-align: right; }
+
+        .instructions {
+            background: white;
+            padding: 12px 15px;
+            font-size: 12px;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            line-height: 1.5;
+        }
+
+        .stats-bar {
+            background: white;
+            padding: 10px 15px;
+            border-bottom: 2px solid #eee;
+            font-size: 13px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stats-bar span { font-weight: bold; color: #e31d1a; }
+
+        .container { padding: 10px; }
+
+        .game-card {
+            background: white;
+            border: 1px solid #ddd;
+            margin-bottom: 8px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+        }
+
+        .option {
+            padding: 15px 8px;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #1a4a7c;
+            border-right: 1px solid #ddd;
+            position: relative;
+            transition: 0.15s;
+            min-height: 80px;
+            user-select: none;
+        }
+
+        .option:last-child { border-right: none; }
+
+        .option img {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+
+        .option.empate { font-size: 22px; color: #999; }
+
+        .option.selected {
+            border: 2px solid #e31d1a;
+        }
+
+        .option.selected::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            border-style: solid;
+            border-width: 16px 16px 0 0;
+            border-color: #e31d1a transparent transparent transparent;
+        }
+
+        .option:active { background: #fff5f5; }
+
+        /* Botões flutuantes */
+        .floating-buttons {
+            position: fixed;
+            bottom: 70px;
+            left: 0; right: 0;
+            padding: 0 15px;
+            z-index: 99;
+        }
+
+        .btn-clear {
+            display: none;
+            width: 100%;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-add {
+            display: none;
+            width: 100%;
+            background: #e31d1a;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #cfd8dc;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .footer-price { color: #1a4a7c; font-size: 12px; }
+        .footer-price strong { display: block; font-size: 15px; }
+
+        .cart-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            color: #1a4a7c;
+            font-size: 11px;
+            position: relative;
+        }
+
+        .cart-btn .icon { font-size: 24px; }
+
+        .cart-badge {
+            position: absolute;
+            top: -5px; right: -5px;
+            background: #e31d1a;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Tela de sucesso ao adicionar */
+        .success-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #e31d1a;
+            z-index: 200;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .success-overlay.show { display: flex; }
+        .success-overlay h2 { font-size: 22px; margin-bottom: 15px; }
+        .success-overlay p { font-size: 14px; opacity: 0.9; margin-bottom: 30px; line-height: 1.6; }
+
+        .btn-back {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left" id="header-concurso">Concurso<br><strong>001</strong></div>
+    <div class="header-title">🏆 Donos do Palpite</div>
+    <div class="header-right" id="header-data">Data<br><strong>--/--</strong></div>
+</header>
+
+<div class="instructions">
+    Escolha os resultados dos jogos abaixo.<br>
+    Você precisa apostar em todos os 10 jogos. Pelo menos 1 palpite deve ser <strong>duplo</strong> (apostar em 2 opções) ou <strong>triplo</strong> (apostar nas 3 opções).
+</div>
+
+<div class="stats-bar">
+    Partidas: <span id="cnt-partidas">0</span>&nbsp;
+    Simples: <span id="cnt-simples">0</span>&nbsp;
+    Duplas: <span id="cnt-duplas">0</span>&nbsp;
+    Triplas: <span id="cnt-triplas">0</span>
+</div>
+
+<div class="container" id="game-container"></div>
+
+<div class="floating-buttons">
+    <button class="btn-clear" id="btn-clear" onclick="clearBets()">Limpar aposta</button>
+    <button class="btn-add" id="btn-add" onclick="addToCart()">Adicionar ao carrinho de apostas</button>
+</div>
+
+<footer>
+    <div class="footer-price">
+        <small>Valor desta aposta</small>
+        <strong id="footer-price">R$ 0,00</strong>
+    </div>
+    <div class="footer-price" style="text-align:center">
+        <small>Valor atual do carrinho</small>
+        <strong id="footer-cart-total">R$ 0,00</strong>
+    </div>
+    <button class="cart-btn" onclick="window.location.href='carrinho.html'">
+        <div class="icon">🛒</div>
+        <div>Carrinho</div>
+        <div class="cart-badge" id="cart-badge">0</div>
+    </button>
+</footer>
+
+<!-- Tela de sucesso -->
+<div class="success-overlay" id="success-overlay">
+    <h2>Aposta inserida no carrinho com sucesso.</h2>
+    <p>Você pode continuar fazendo apostas ou ir ao carrinho para finalizar.</p>
+    <button class="btn-back" onclick="closeSuccess()">Voltar ao início</button>
+</div>
+
+<script>
+    let selections = {};
+    let adminGames = [];
+
+    function loadGames() {
+        adminGames = JSON.parse(localStorage.getItem('adminGames') || '[]');
+
+        if (adminGames.length === 0) {
+            // Jogos padrão se admin ainda não configurou
+            for (let i = 0; i < 10; i++) {
+                adminGames.push({ id: i, home: `Time Casa ${i+1}`, away: `Time Visitante ${i+1}`, homeImg: '', awayImg: '' });
+            }
+        }
+
+        const config = JSON.parse(localStorage.getItem('concursoConfig') || '{}');
+        if (config.concurso) document.getElementById('header-concurso').innerHTML = `Concurso<br><strong>${config.concurso}</strong>`;
+        if (config.data) {
+            const d = new Date(config.data);
+            document.getElementById('header-data').innerHTML = `Data<br><strong>${d.toLocaleDateString('pt-BR')}</strong>`;
+        }
+
+        renderGames();
+    }
+
+    function renderGames() {
+        const container = document.getElementById('game-container');
+        container.innerHTML = adminGames.map((game, i) => `
+            <div class="game-card" data-idx="${i}">
+                <div class="option" onclick="toggle(${i}, 0)">
+                    ${game.homeImg ? `<img src="${game.homeImg}">` : `<div style="font-size:28px">🛡️</div>`}
+                    <span>${game.home}</span>
+                </div>
+                <div class="option empate" onclick="toggle(${i}, 1)">
+                    ✕<br><span style="font-size:10px;font-weight:bold;color:#555">EMPATE</span>
+                </div>
+                <div class="option" onclick="toggle(${i}, 2)">
+                    ${game.awayImg ? `<img src="${game.awayImg}">` : `<div style="font-size:28px">🛡️</div>`}
+                    <span>${game.away}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function toggle(gameIdx, optIdx) {
+        if (!selections[gameIdx]) selections[gameIdx] = [];
+        const pos = selections[gameIdx].indexOf(optIdx);
+        if (pos > -1) selections[gameIdx].splice(pos, 1);
+        else selections[gameIdx].push(optIdx);
+        updateUI();
+    }
+
+    function updateUI() {
+        // Atualiza visual
+        document.querySelectorAll('.game-card').forEach(card => {
+            const idx = parseInt(card.dataset.idx);
+            card.querySelectorAll('.option').forEach((opt, oi) => {
+                if (selections[idx] && selections[idx].includes(oi)) opt.classList.add('selected');
+                else opt.classList.remove('selected');
+            });
+        });
+
+        let simples = 0, duplas = 0, triplas = 0, partidas = 0;
+        Object.values(selections).forEach(s => {
+            if (s.length === 1) simples++;
+            else if (s.length === 2) duplas++;
+            else if (s.length === 3) triplas++;
+            if (s.length > 0) partidas++;
+        });
+
+        document.getElementById('cnt-partidas').innerText = partidas;
+        document.getElementById('cnt-simples').innerText = simples;
+        document.getElementById('cnt-duplas').innerText = duplas;
+        document.getElementById('cnt-triplas').innerText = triplas;
+
+        // Preço: R$2 base * 2^duplas * 3^triplas
+        let price = 0;
+        if (partidas === 10) {
+            price = 2.00 * Math.pow(2, duplas) * Math.pow(3, triplas);
+        }
+        document.getElementById('footer-price').innerText = `R$ ${price.toFixed(2)}`;
+
+        // Carrinho total
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const cartTotal = cart.reduce((s, b) => s + b.price, 0);
+        document.getElementById('footer-cart-total').innerText = `R$ ${cartTotal.toFixed(2)}`;
+        document.getElementById('cart-badge').innerText = cart.length;
+
+        // Botões
+        const hasSel = partidas > 0;
+        document.getElementById('btn-clear').style.display = hasSel ? 'block' : 'none';
+
+        const canAdd = partidas === 10 && (duplas > 0 || triplas > 0);
+        document.getElementById('btn-add').style.display = canAdd ? 'block' : 'none';
+    }
+
+    function clearBets() {
+        selections = {};
+        updateUI();
+    }
+
+    function addToCart() {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+        let duplas = 0, triplas = 0;
+        Object.values(selections).forEach(s => {
+            if (s.length === 2) duplas++;
+            if (s.length === 3) triplas++;
+        });
+
+        const price = 2.00 * Math.pow(2, duplas) * Math.pow(3, triplas);
+        const config = JSON.parse(localStorage.getItem('concursoConfig') || '{}');
+
+        const bet = {
+            id: Date.now(),
+            concurso: config.concurso || '001',
+            selections: adminGames.map((_, i) => selections[i] || []),
+            price,
+            user: user.nome,
+            email: user.email,
+            telefone: user.telefone,
+            date: new Date().toLocaleString('pt-BR')
+        };
+
+        cart.push(bet);
+        localStorage.setItem('cart', JSON.stringify(cart));
+
+        // Mostra tela de sucesso
+        document.getElementById('success-overlay').classList.add('show');
+        clearBets();
+    }
+
+    function closeSuccess() {
+        document.getElementById('success-overlay').classList.remove('show');
+        updateUI();
+    }
+
+    // Proteção de rota
+    window.onload = () => {
+        const user = localStorage.getItem('currentUser');
+        if (!user) { window.location.href = 'login.html'; return; }
+        loadGames();
+        updateUI();
+    };
+</script>
+</body>
+</html>

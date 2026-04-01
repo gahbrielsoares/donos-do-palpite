@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donos do Palpite - Carrinho</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding-bottom: 100px; }
+
+        header {
+            background: #e31d1a;
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        header a { color: white; text-decoration: none; font-size: 20px; }
+        header h2 { flex: 1; text-align: center; font-size: 16px; }
+        .header-icons { display: flex; gap: 10px; font-size: 18px; }
+
+        .alert-box {
+            background: white;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .alert-box p:first-child { color: #1a4a7c; font-weight: bold; margin-bottom: 5px; }
+        .alert-box p:last-child { color: #555; }
+
+        .section-title {
+            color: #1a4a7c;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 10px 15px 5px;
+        }
+
+        .bet-card {
+            background: white;
+            margin: 0 10px 10px;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+
+        .bet-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .bet-card-header .bet-name { color: #e31d1a; font-weight: bold; font-size: 14px; }
+        .bet-card-header .bet-price { font-weight: bold; color: #333; }
+        .btn-delete { background: none; border: none; cursor: pointer; font-size: 18px; color: #999; }
+        .btn-delete:hover { color: #e31d1a; }
+
+        .bet-game {
+            display: flex;
+            align-items: flex-start;
+            padding: 6px 0;
+            font-size: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .bet-game:last-child { border-bottom: none; }
+
+        .bet-options {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex: 1;
+        }
+
+        .bet-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #555;
+        }
+
+        .bet-option.chosen { color: #333; font-weight: bold; }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            flex-shrink: 0;
+        }
+        .dot.filled { background: #e31d1a; border-color: #e31d1a; }
+
+        .empty-cart {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-cart .icon { font-size: 50px; margin-bottom: 10px; }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #cfd8dc;
+            padding: 10px 15px;
+        }
+
+        .footer-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #1a4a7c;
+            margin-bottom: 8px;
+        }
+
+        .btn-continue {
+            display: block;
+            width: 100%;
+            background: white;
+            border: 2px solid #26a69a;
+            color: #26a69a;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 8px;
+            text-decoration: none;
+        }
+
+        .btn-advance {
+            display: block;
+            width: 100%;
+            background: #26a69a;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 15px;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn-advance:hover { background: #1e8a7e; }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="index.html">&#8592;</a>
+    <h2>Carrinho de apostas</h2>
+    <div class="header-icons">
+        <span onclick="clearAll()" style="cursor:pointer">🗑️</span>
+        <span>☆</span>
+    </div>
+</header>
+
+<div class="alert-box">
+    <p>Confirme suas apostas e pressione AVANÇAR para continuar.</p>
+    <p>Lembre-se que o valor mínimo do total de compras neste aplicativo é R$ 2,50</p>
+</div>
+
+<div class="section-title">Apostas individuais</div>
+
+<div id="cart-list"></div>
+
+<footer>
+    <div class="footer-total">
+        <span>Valor atual do carrinho</span>
+        <strong id="footer-total">R$ 0,00</strong>
+    </div>
+    <a href="index.html" class="btn-continue">Continuar apostando</a>
+    <a href="pagamento.html" class="btn-advance" id="btn-advance">Avançar para a forma de pagamento</a>
+</footer>
+
+<script>
+    const gameNames = JSON.parse(localStorage.getItem('gameNames') || '{}');
+
+    function renderCart() {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const container = document.getElementById('cart-list');
+        const footerTotal = document.getElementById('footer-total');
+
+        if (cart.length === 0) {
+            container.innerHTML = `
+                <div class="empty-cart">
+                    <div class="icon">🛒</div>
+                    <p>Seu carrinho está vazio.</p>
+                    <a href="index.html" style="color:#e31d1a;">Fazer apostas</a>
+                </div>`;
+            footerTotal.innerText = 'R$ 0,00';
+            document.getElementById('btn-advance').style.pointerEvents = 'none';
+            document.getElementById('btn-advance').style.opacity = '0.5';
+            return;
+        }
+
+        let totalGeral = 0;
+
+        container.innerHTML = cart.map((bet, index) => {
+            totalGeral += bet.price;
+            return `
+            <div class="bet-card" id="bet-${index}">
+                <div class="bet-card-header">
+                    <div>
+                        <div class="bet-name">donos do palpite</div>
+                        <div style="font-size:11px;color:#888;">Conc. ${bet.concurso || '001'}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span class="bet-price">R$ ${bet.price.toFixed(2)}</span>
+                        <button class="btn-delete" onclick="removeBet(${index})">🗑️</button>
+                    </div>
+                </div>
+                ${renderBetGames(bet)}
+            </div>`;
+        }).join('');
+
+        footerTotal.innerText = `R$ ${totalGeral.toFixed(2)}`;
+    }
+
+    function renderBetGames(bet) {
+        const games = JSON.parse(localStorage.getItem('adminGames') || '[]');
+        return bet.selections.map((sel, i) => {
+            const game = games[i] || { home: `Time A ${i+1}`, away: `Time B ${i+1}` };
+            const options = [game.home, 'Empate', game.away];
+            return `
+            <div class="bet-game">
+                <div class="bet-options">
+                    ${options.map((opt, idx) => `
+                        <div class="bet-option ${sel.includes(idx) ? 'chosen' : ''}">
+                            <div class="dot ${sel.includes(idx) ? 'filled' : ''}"></div>
+                            ${opt}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function removeBet(index) {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        cart.splice(index, 1);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+    }
+
+    function clearAll() {
+        if (confirm('Deseja remover todas as apostas do carrinho?')) {
+            localStorage.setItem('cart', '[]');
+            renderCart();
+        }
+    }
+
+    renderCart();
+</script>
+</body>
+</html>
