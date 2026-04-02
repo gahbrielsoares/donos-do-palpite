@@ -21,6 +21,8 @@
     .codeBox { flex:1; min-width:260px; }
     textarea { width:100%; min-height:120px; border-radius:10px; border:1px solid #333; background:#0f0f0f; color:#fff; padding:12px; }
     .btn2 { background:#2d7dff; color:#fff; width:100%; margin-top:8px; }
+    .btn-finalize { background:#28a745; color:#fff; width:100%; margin-top:12px; border-radius:10px; padding:12px; font-weight:700; cursor:pointer; border:none; }
+    .btn-finalize:hover { background:#218838; }
   </style>
 </head>
 <body>
@@ -69,7 +71,8 @@
             <div class="muted" id="ticketWrap" style="margin-top:8px;"></div>
           </div>
         </div>
-        <div class="ok">Após o pagamento, você pode fechar esta tela. Nós confirmaremos sua aposta no painel.</div>
+        <button class="btn-finalize" id="btnFinalize" style="display:none;">Finalizar</button>
+        <div class="ok" style="margin-top:12px;">Após o pagamento, clique em Finalizar para confirmar sua aposta.</div>
       </div>
     </div>
   </div>
@@ -155,10 +158,6 @@
           date: new Date().toLocaleString('pt-BR')
         }));
 
-        // Limpar carrinho e redirecionar para espelho
-        localStorage.setItem('cart', '[]');
-        setTimeout(() => { window.location.href = 'espelho.html'; }, 1500);
-
         // Salvar “registro” local para o admin (até você ter webhook + DB)
         const betRecord = {
           betId: data.external_reference,
@@ -186,6 +185,10 @@
         }
 
         setMsg('ok', 'PIX gerado com sucesso.');
+
+        // Mostrar botão Finalizar
+        document.getElementById('btnFinalize').style.display = 'block';
+
       } catch (e) {
         setMsg('err', 'Falha ao gerar PIX: ' + e.message);
       } finally {
@@ -203,6 +206,10 @@
       } catch {
         setMsg('err', 'Não consegui copiar automaticamente. Selecione e copie manualmente.');
       }
+    });
+
+    document.getElementById('btnFinalize').addEventListener('click', () => {
+      window.location.href = 'espelho.html';
     });
 
     // summary
