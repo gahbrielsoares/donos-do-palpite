@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "mercadopago": "^2.0.15"
+    "mercadopago": "1.5.17"
   }
 }
