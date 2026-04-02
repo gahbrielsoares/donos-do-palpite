@@ -86,7 +86,7 @@
 
     function getTotalFromCart() {
       const cart = getCart();
-      return cart.reduce((sum, item) => sum + (Number(item.totalValue || item.value || 0)), 0);
+      return cart.reduce((sum, item) => sum + (Number(item.price || item.totalValue || item.value || 0)), 0);
     }
 
     function setMsg(type, text) {
