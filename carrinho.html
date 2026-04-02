@@ -290,21 +290,21 @@
     }
 
     function renderBetGames(bet) {
-        const games = JSON.parse(localStorage.getItem('adminGames') || '[]');
-        return bet.selections.map((sel, i) => {
-            const game = games[i] || { home: `Time A ${i+1}`, away: `Time B ${i+1}` };
-            const options = [game.home, 'Empate', game.away];
+        return bet.selections.map((selObj, i) => {
+            const game = selObj || {};
+            const choices = game.choices || [];
+            const options = [game.home || `Time Casa ${i+1}`, 'Empate', game.away || `Time Visitante ${i+1}`];
             return `
-            <div class="bet-game">
+              <div class="bet-game">
                 <div class="bet-options">
-                    ${options.map((opt, idx) => `
-                        <div class="bet-option ${sel.includes(idx) ? 'chosen' : ''}">
-                            <div class="dot ${sel.includes(idx) ? 'filled' : ''}"></div>
-                            ${opt}
-                        </div>
-                    `).join('')}
+                  ${options.map((opt, idx) => `
+                    <div class="bet-option ${choices.includes(idx) ? 'chosen' : ''}">
+                      <div class="dot ${choices.includes(idx) ? 'filled' : ''}"></div>
+                      ${opt}
+                    </div>
+                  `).join('')}
                 </div>
-            </div>`;
+              </div>`;
         }).join('');
     }
 
