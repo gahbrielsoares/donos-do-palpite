@@ -25,11 +25,10 @@ exports.handler = async (event) => {
 
   try {
     const { payer, cart, total, mpPaymentId, externalReference } = JSON.parse(event.body || '{}');
-    const games = JSON.parse(process.env.ADMIN_GAMES || '[]');
 
-    // Função para formatar os palpites de cada jogo
+    // Função para formatar os palpites de cada jogo usando os nomes já no cart
     const optLabel = (sel, game) => {
-      const opts = [game?.home || 'Time Casa', 'Empate', game?.away || 'Time Visitante'];
+      const opts = [game.home || 'Time Casa', 'Empate', game.away || 'Time Visitante'];
       return sel.length ? sel.map(i => opts[i]).join(' + ') : '—';
     };
 
@@ -41,12 +40,14 @@ exports.handler = async (event) => {
           <tr><th>#</th><th>Jogo</th><th>Palpite(s)</th></tr>
         </thead>
         <tbody>
-          ${(bet.selections || []).map((sel, idx) => {
-            const g = games[idx] || {};
+          ${(bet.selections || []).map((selObj, idx) => {
+            // selObj: { choices: [], home: '', away: '' }
+            const game = selObj || {};
+            const choices = game.choices || [];
             return `<tr>
               <td>${idx + 1}</td>
-              <td>${g.home || '?'} x ${g.away || '?'}</td>
-              <td><strong>${optLabel(sel, g)}</strong></td>
+              <td>${game.home || '?'} x ${game.away || '?'}</td>
+              <td><strong>${optLabel(choices, game)}</strong></td>
             </tr>`;
           }).join('')}
         </tbody>
