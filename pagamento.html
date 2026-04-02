@@ -1,570 +1,200 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+<!doctype html>
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Donos do Palpite - Pagamento</title>
-    <script src="https://js.stripe.com/v3/"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f4f4f4; padding-bottom: 40px; }
-
-        header {
-            background: #e31d1a;
-            color: white;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        header a { color: white; text-decoration: none; font-size: 20px; }
-        header h2 { flex: 1; text-align: center; font-size: 16px; }
-
-        .container { padding: 15px; }
-
-        .order-summary {
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        }
-        .order-summary h3 { color: #1a4a7c; font-size: 14px; margin-bottom: 10px; }
-        .order-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            padding: 6px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .order-row:last-child {
-            border-bottom: none;
-            font-weight: bold;
-            font-size: 15px;
-            color: #e31d1a;
-            margin-top: 5px;
-        }
-
-        .payment-methods {
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        }
-        .payment-methods h3 { color: #1a4a7c; font-size: 14px; margin-bottom: 15px; }
-
-        .method-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-        .method-tab {
-            flex: 1;
-            padding: 12px 5px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-            color: #555;
-            transition: 0.2s;
-        }
-        .method-tab.active {
-            border-color: #e31d1a;
-            color: #e31d1a;
-            background: #fff5f5;
-        }
-        .method-tab .icon { font-size: 22px; display: block; margin-bottom: 4px; }
-
-        .payment-form { display: none; }
-        .payment-form.active { display: block; }
-
-        /* PIX */
-        .pix-box {
-            text-align: center;
-            padding: 10px 0;
-        }
-        .pix-box p { font-size: 13px; color: #555; margin-bottom: 15px; line-height: 1.5; }
-
-        .qr-wrapper {
-            width: 200px;
-            height: 200px;
-            margin: 0 auto 15px;
-            border: 2px solid #eee;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #fafafa;
-            overflow: hidden;
-        }
-        .qr-wrapper img { width: 100%; height: 100%; object-fit: contain; }
-        .qr-wrapper .loading { font-size: 12px; color: #999; }
-
-        .pix-key-box {
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 10px 12px;
-            font-size: 11px;
-            word-break: break-all;
-            color: #333;
-            margin-bottom: 10px;
-            text-align: left;
-        }
-
-        .btn-copy {
-            background: #26a69a;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: bold;
-        }
-
-        .pix-timer {
-            margin-top: 12px;
-            font-size: 12px;
-            color: #e31d1a;
-            font-weight: bold;
-        }
-
-        .pix-status {
-            margin-top: 10px;
-            font-size: 13px;
-            color: #555;
-        }
-
-        /* Cartão */
-        .form-group { margin-bottom: 15px; }
-        .form-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: bold;
-            color: #555;
-            margin-bottom: 5px;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            outline: none;
-        }
-        .form-group input:focus { border-color: #e31d1a; }
-
-        #card-element {
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            background: white;
-            min-height: 44px;
-        }
-        #card-errors {
-            color: #e31d1a;
-            font-size: 12px;
-            margin-top: 6px;
-            min-height: 18px;
-        }
-
-        .btn-pay {
-            width: 100%;
-            background: #e31d1a;
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: 0.2s;
-        }
-        .btn-pay:hover { background: #c0150f; }
-        .btn-pay:disabled { background: #ccc; cursor: not-allowed; }
-
-        .secure-badge {
-            text-align: center;
-            font-size: 11px;
-            color: #999;
-            margin-top: 10px;
-        }
-
-        /* Sucesso */
-        .success-screen {
-            display: none;
-            text-align: center;
-            padding: 40px 20px;
-            background: white;
-            border-radius: 10px;
-            margin-top: 20px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        }
-        .success-screen .icon { font-size: 60px; margin-bottom: 15px; }
-        .success-screen h2 { color: #1a7c1a; margin-bottom: 10px; }
-        .success-screen p { color: #555; font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
-        .btn-home {
-            background: #e31d1a;
-            color: white;
-            border: none;
-            padding: 14px 30px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        /* Loading spinner */
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.4);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            vertical-align: middle;
-            margin-right: 6px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pagamento - Donos do Palpite</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background:#0b0b0b; color:#fff; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 18px; }
+    .card { background:#141414; border:1px solid #2a2a2a; border-radius:12px; padding:16px; }
+    label { display:block; font-size: 14px; margin: 10px 0 6px; color:#cfcfcf; }
+    input { width:100%; padding:12px; border-radius:10px; border:1px solid #333; background:#0f0f0f; color:#fff; }
+    button { padding:12px 14px; border-radius:10px; border:0; cursor:pointer; font-weight:700; }
+    .btn { background:#e41d2d; color:#fff; width:100%; margin-top:12px; }
+    .muted { color:#bdbdbd; font-size: 13px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .err { background:#3a0f12; border:1px solid #7a1e24; padding:10px; border-radius:10px; margin-top:12px; color:#ffb3b3; }
+    .ok { background:#0f2d1a; border:1px solid #1f6a3a; padding:10px; border-radius:10px; margin-top:12px; color:#bfffd6; }
+    img.qr { width: 260px; height: 260px; background:#fff; padding:10px; border-radius:12px; }
+    .pixBox { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; margin-top:14px; }
+    .codeBox { flex:1; min-width:260px; }
+    textarea { width:100%; min-height:120px; border-radius:10px; border:1px solid #333; background:#0f0f0f; color:#fff; padding:12px; }
+    .btn2 { background:#2d7dff; color:#fff; width:100%; margin-top:8px; }
+  </style>
 </head>
 <body>
+  <div class="wrap">
+    <h2>Pagamento (PIX)</h2>
 
-<header>
-    <a href="carrinho.html">&#8592;</a>
-    <h2>Forma de Pagamento</h2>
-</header>
+    <div class="card">
+      <div id="summary" class="muted"></div>
 
-<div class="container">
-
-    <!-- Resumo -->
-    <div class="order-summary">
-        <h3>📋 Resumo do pedido</h3>
-        <div class="order-row">
-            <span id="summary-qtd">0 aposta(s)</span>
-            <span id="summary-subtotal">R$ 0,00</span>
+      <h3 style="margin-top:14px;">Identificação do apostador</h3>
+      <div class="row">
+        <div>
+          <label>Nome completo</label>
+          <input id="name" placeholder="Ex: Gabriel José da Silva" />
         </div>
-        <div class="order-row">
-            <span>Total a pagar</span>
-            <span id="summary-total">R$ 0,00</span>
+        <div>
+          <label>WhatsApp (DDD + número)</label>
+          <input id="phone" placeholder="Ex: (11) 91234-5678" />
         </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>E-mail</label>
+          <input id="email" placeholder="exemplo@email.com" />
+        </div>
+        <div>
+          <label>CPF</label>
+          <input id="cpf" placeholder="000.000.000-00" />
+        </div>
+      </div>
+
+      <button class="btn" id="btnPix">Gerar PIX</button>
+      <div id="msg"></div>
+
+      <div id="pixResult" style="display:none;">
+        <div class="pixBox">
+          <div>
+            <div class="muted" style="margin-bottom:8px;">Escaneie o QR Code:</div>
+            <img id="qrImg" class="qr" alt="QR Code PIX"/>
+          </div>
+          <div class="codeBox">
+            <div class="muted" style="margin-bottom:8px;">PIX copia e cola:</div>
+            <textarea id="pixCopy" readonly></textarea>
+            <button class="btn2" id="btnCopy">Copiar código PIX</button>
+            <div class="muted" id="ticketWrap" style="margin-top:8px;"></div>
+          </div>
+        </div>
+        <div class="ok">Após o pagamento, você pode fechar esta tela. Nós confirmaremos sua aposta no painel.</div>
+      </div>
     </div>
+  </div>
 
-    <!-- Métodos -->
-    <div class="payment-methods" id="payment-section">
-        <h3>💳 Escolha a forma de pagamento</h3>
-
-        <div class="method-tabs">
-            <div class="method-tab active" onclick="selectMethod('pix', this)">
-                <span class="icon">📱</span> PIX
-            </div>
-            <div class="method-tab" onclick="selectMethod('card', this)">
-                <span class="icon">💳</span> Cartão
-            </div>
-        </div>
-
-        <!-- PIX -->
-        <div class="payment-form active" id="form-pix">
-            <div class="pix-box">
-                <p>Clique em <strong>Gerar PIX</strong> para criar seu QR Code.<br>
-                O pagamento é confirmado automaticamente.</p>
-
-                <div class="qr-wrapper" id="qr-wrapper">
-                    <span class="loading">Aguardando geração...</span>
-                </div>
-
-                <div class="pix-key-box" id="pix-key-box" style="display:none"></div>
-
-                <button class="btn-copy" id="btn-copy-pix" style="display:none" onclick="copyPix()">
-                    📋 Copiar código PIX
-                </button>
-
-                <div class="pix-timer" id="pix-timer"></div>
-                <div class="pix-status" id="pix-status"></div>
-
-                <br>
-                <button class="btn-pay" id="btn-gerar-pix" onclick="gerarPix()">
-                    📱 Gerar PIX
-                </button>
-            </div>
-        </div>
-
-        <!-- Cartão -->
-        <div class="payment-form" id="form-card">
-            <div class="form-group">
-                <label>Nome no cartão</label>
-                <input type="text" id="card-name" placeholder="Como está no cartão">
-            </div>
-            <div class="form-group">
-                <label>Dados do cartão</label>
-                <div id="card-element"></div>
-                <div id="card-errors"></div>
-            </div>
-            <button class="btn-pay" id="btn-pay-card" onclick="payWithCard()">
-                🔒 Pagar agora
-            </button>
-            <div class="secure-badge">🔒 Pagamento 100% seguro via Stripe</div>
-        </div>
-    </div>
-
-    <!-- Sucesso -->
-    <div class="success-screen" id="success-screen">
-        <div class="icon">🎉</div>
-        <h2>Aposta confirmada!</h2>
-        <p>Seu pagamento foi processado com sucesso.<br>
-        Boa sorte nos palpites! 🏆</p>
-        <a href="index.html" class="btn-home" onclick="clearAfterPay()">Voltar ao início</a>
-    </div>
-
-</div>
-
-<script>
-    // ✅ Sua chave pública Stripe
-    const stripe = Stripe('pk_test_51TGevTEt88yfSZ4tUnwe5X6B5YfuZ83pW0EE27QS1o8ApIqAtuuHln9rqCB9UZ5KKyrf8KCvoq7tvV3yaf5PXJcm000fjttbYa');
-    const elements = stripe.elements();
-
-    const cardElement = elements.create('card', {
-        style: {
-            base: {
-                fontSize: '16px',
-                color: '#333',
-                '::placeholder': { color: '#aaa' }
-            },
-            invalid: { color: '#e31d1a' }
-        }
-    });
-    cardElement.mount('#card-element');
-    cardElement.on('change', e => {
-        document.getElementById('card-errors').innerText = e.error ? e.error.message : '';
-    });
-
-    let pixClientSecret = null;
-    let pixCheckInterval = null;
-
-    // Carrega resumo do carrinho
-    window.onload = () => {
-        const user = localStorage.getItem('currentUser');
-        if (!user) { window.location.href = 'login.html'; return; }
-
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        if (cart.length === 0) { window.location.href = 'carrinho.html'; return; }
-
-        const total = cart.reduce((s, b) => s + b.price, 0);
-        document.getElementById('summary-qtd').innerText = `${cart.length} aposta(s)`;
-        document.getElementById('summary-subtotal').innerText = `R$ ${total.toFixed(2)}`;
-        document.getElementById('summary-total').innerText = `R$ ${total.toFixed(2)}`;
-    };
-
-    function selectMethod(method, el) {
-        document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.payment-form').forEach(f => f.classList.remove('active'));
-        el.classList.add('active');
-        document.getElementById(`form-${method}`).classList.add('active');
+  <script>
+    function moneyBRL(v) {
+      try { return v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
+      catch { return 'R$ ' + String(v); }
     }
 
-    // ===== PIX =====
-    async function gerarPix() {
-        const btn = document.getElementById('btn-gerar-pix');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Gerando PIX...';
-
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const total = cart.reduce((s, b) => s + b.price, 0);
-        const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-
-        try {
-            const res = await fetch('/.netlify/functions/create-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: Math.round(total * 100),
-                    method: 'pix',
-                    user: user.email || 'usuario'
-                })
-            });
-
-            const raw = await res.text();
-            let data;
-            try {
-                data = JSON.parse(raw);
-            } catch (e) {
-                throw new Error('Função Netlify retornou resposta inválida. Verifique se a variável STRIPE_SECRET_KEY está configurada no Netlify e faça um novo deploy. Detalhe: ' + (raw || 'resposta vazia'));
-            }
-
-            if (!res.ok || data.error) throw new Error(data.error || `Erro HTTP ${res.status}`);
-
-            pixClientSecret = data.clientSecret;
-
-            // Confirma o PIX no frontend
-            const result = await stripe.confirmPixPayment(pixClientSecret, {
-                payment_method: {}
-            });
-
-            if (result.error) throw new Error(result.error.message);
-
-            const pixData = result.paymentIntent?.next_action?.pix_display_qr_code;
-
-            if (pixData) {
-                // Mostra QR Code
-                document.getElementById('qr-wrapper').innerHTML =
-                    `<img src="${pixData.image_url_png}" alt="QR Code PIX">`;
-
-                // Mostra código copia e cola
-                document.getElementById('pix-key-box').innerText = pixData.data;
-                document.getElementById('pix-key-box').style.display = 'block';
-                document.getElementById('btn-copy-pix').style.display = 'inline-block';
-
-                btn.style.display = 'none';
-
-                // Timer 30 minutos
-                startPixTimer(30 * 60);
-
-                // Verifica pagamento a cada 5s
-                pixCheckInterval = setInterval(() => checkPixPayment(pixClientSecret), 5000);
-            }
-
-        } catch (err) {
-            document.getElementById('pix-status').innerText = '❌ Erro: ' + err.message;
-            btn.disabled = false;
-            btn.innerHTML = '📱 Tentar novamente';
-        }
+    function getCart() {
+      return JSON.parse(localStorage.getItem('cart') || '[]');
     }
 
-    async function checkPixPayment(clientSecret) {
-        try {
-            const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
-            if (paymentIntent.status === 'succeeded') {
-                clearInterval(pixCheckInterval);
-                showSuccess();
-            }
-        } catch (e) {}
+    function getTotalFromCart() {
+      const cart = getCart();
+      return cart.reduce((sum, item) => sum + (Number(item.totalValue || item.value || 0)), 0);
     }
 
-    function startPixTimer(seconds) {
-        const timerEl = document.getElementById('pix-timer');
-        const interval = setInterval(() => {
-            const m = Math.floor(seconds / 60);
-            const s = seconds % 60;
-            timerEl.innerText = `⏱️ Expira em: ${m}:${s.toString().padStart(2,'0')}`;
-            seconds--;
-            if (seconds < 0) {
-                clearInterval(interval);
-                timerEl.innerText = '❌ PIX expirado. Gere um novo.';
-                document.getElementById('btn-gerar-pix').style.display = 'block';
-                document.getElementById('btn-gerar-pix').disabled = false;
-                document.getElementById('btn-gerar-pix').innerHTML = '📱 Gerar novo PIX';
-            }
-        }, 1000);
+    function setMsg(type, text) {
+      const msg = document.getElementById('msg');
+      msg.innerHTML = '<div class="'+(type==='err'?'err':'ok')+'">'+text+'</div>';
     }
 
-    function copyPix() {
-        const key = document.getElementById('pix-key-box').innerText;
-        navigator.clipboard.writeText(key).then(() => {
-            document.getElementById('btn-copy-pix').innerText = '✅ Copiado!';
-            setTimeout(() => {
-                document.getElementById('btn-copy-pix').innerText = '📋 Copiar código PIX';
-            }, 2000);
-        });
+    function sanitizeCpf(cpf) { return String(cpf || '').replace(/\D/g, ''); }
+
+    function buildBetPayload() {
+      const cart = getCart();
+      // Você pode mandar o espelho do carrinho; mantenha tamanho moderado.
+      return {
+        id: 'bet_' + Date.now(),
+        games: cart
+      };
     }
 
-    // ===== CARTÃO =====
-    async function payWithCard() {
-        const btn = document.getElementById('btn-pay-card');
-        const errEl = document.getElementById('card-errors');
-        const name = document.getElementById('card-name').value.trim();
+    async function createPixPayment() {
+      const amount = getTotalFromCart();
+      if (!amount || amount <= 0) {
+        setMsg('err', 'Carrinho vazio. Volte e adicione uma aposta.');
+        return;
+      }
 
-        if (!name) {
-            errEl.innerText = 'Informe o nome no cartão.';
-            return;
-        }
+      const payer = {
+        name: document.getElementById('name').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        cpf: sanitizeCpf(document.getElementById('cpf').value.trim())
+      };
 
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Processando...';
-        errEl.innerText = '';
+      if (!payer.name || !payer.phone || !payer.email || !payer.cpf) {
+        setMsg('err', 'Preencha Nome, WhatsApp, E-mail e CPF.');
+        return;
+      }
 
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const total = cart.reduce((s, b) => s + b.price, 0);
-        const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const bet = buildBetPayload();
 
-        try {
-            const res = await fetch('/.netlify/functions/create-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: Math.round(total * 100),
-                    method: 'card',
-                    user: user.email || 'usuario'
-                })
-            });
+      const btn = document.getElementById('btnPix');
+      btn.disabled = true;
+      btn.textContent = 'Gerando PIX...';
 
-            const raw = await res.text();
-            let data;
-            try {
-                data = JSON.parse(raw);
-            } catch (e) {
-                throw new Error('Função Netlify retornou resposta inválida. Verifique se a variável STRIPE_SECRET_KEY está configurada no Netlify e faça um novo deploy. Detalhe: ' + (raw || 'resposta vazia'));
-            }
-
-            if (!res.ok || data.error) throw new Error(data.error || `Erro HTTP ${res.status}`);
-
-            const result = await stripe.confirmCardPayment(data.clientSecret, {
-                payment_method: {
-                    card: cardElement,
-                    billing_details: { name }
-                }
-            });
-
-            if (result.error) {
-                errEl.innerText = result.error.message;
-                btn.disabled = false;
-                btn.innerHTML = '🔒 Pagar agora';
-            } else {
-                showSuccess();
-            }
-
-        } catch (err) {
-            errEl.innerText = 'Erro ao conectar com o servidor: ' + err.message;
-            btn.disabled = false;
-            btn.innerHTML = '🔒 Pagar agora';
-        }
-    }
-
-    // ===== SUCESSO =====
-    function showSuccess() {
-        document.getElementById('payment-section').style.display = 'none';
-        document.getElementById('success-screen').style.display = 'block';
-        saveOrder();
-    }
-
-    function saveOrder() {
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-
-        orders.push({
-            id: Date.now(),
-            user: user.nome,
-            email: user.email,
-            telefone: user.telefone,
-            bets: cart,
-            total: cart.reduce((s, b) => s + b.price, 0),
-            date: new Date().toLocaleString('pt-BR')
+      try {
+        const res = await fetch('/.netlify/functions/mp-create-pix', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ amount: Number(amount.toFixed(2)), payer, bet })
         });
 
-        localStorage.setItem('orders', JSON.stringify(orders));
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch { /* ignore */ }
+
+        if (!res.ok || !data || !data.ok) {
+          const detail = data?.error || text || 'Erro desconhecido';
+          throw new Error(detail);
+        }
+
+        // Salvar “registro” local para o admin (até você ter webhook + DB)
+        const betRecord = {
+          betId: data.external_reference,
+          mpPaymentId: data.mp_payment_id,
+          status: data.status,
+          createdAt: new Date().toISOString(),
+          payer,
+          cart: getCart(),
+          total: amount
+        };
+        const all = JSON.parse(localStorage.getItem('admin_bets') || '[]');
+        all.unshift(betRecord);
+        localStorage.setItem('admin_bets', JSON.stringify(all));
+
+        // UI
+        document.getElementById('pixResult').style.display = 'block';
+        document.getElementById('qrImg').src = 'data:image/png;base64,' + data.pix.qr_code_base64;
+        document.getElementById('pixCopy').value = data.pix.qr_code;
+
+        const ticketWrap = document.getElementById('ticketWrap');
+        if (data.pix.ticket_url) {
+          ticketWrap.innerHTML = 'Se preferir, abra o link: <a href="'+data.pix.ticket_url+'" target="_blank" rel="noopener" style="color:#7fb2ff;">ticket PIX</a>';
+        } else {
+          ticketWrap.textContent = '';
+        }
+
+        setMsg('ok', 'PIX gerado com sucesso.');
+      } catch (e) {
+        setMsg('err', 'Falha ao gerar PIX: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Gerar PIX';
+      }
     }
 
-    function clearAfterPay() {
-        localStorage.setItem('cart', '[]');
-    }
-</script>
+    document.getElementById('btnPix').addEventListener('click', createPixPayment);
+    document.getElementById('btnCopy').addEventListener('click', async () => {
+      const code = document.getElementById('pixCopy').value;
+      try {
+        await navigator.clipboard.writeText(code);
+        setMsg('ok', 'Código PIX copiado!');
+      } catch {
+        setMsg('err', 'Não consegui copiar automaticamente. Selecione e copie manualmente.');
+      }
+    });
+
+    // summary
+    const total = getTotalFromCart();
+    document.getElementById('summary').textContent = 'Total do carrinho: ' + moneyBRL(total);
+  </script>
 </body>
 </html>
