@@ -279,6 +279,7 @@
 <div class="floating-buttons">
     <button class="btn-clear" id="btn-clear" onclick="clearBets()">Limpar aposta</button>
     <button class="btn-add" id="btn-add" onclick="addToCart()">Adicionar ao carrinho de apostas</button>
+    <div id="error-msg" style="color:red; font-weight:bold; margin-top:10px;"></div>
 </div>
 
 <footer>
@@ -312,7 +313,6 @@
         adminGames = JSON.parse(localStorage.getItem('adminGames') || '[]');
 
         if (adminGames.length === 0) {
-            // Jogos padrão se admin ainda não configurou
             for (let i = 0; i < 10; i++) {
                 adminGames.push({ id: i, home: `Time Casa ${i+1}`, away: `Time Visitante ${i+1}`, homeImg: '', awayImg: '' });
             }
@@ -378,12 +378,42 @@
         document.getElementById('cnt-duplas').innerText = duplas;
         document.getElementById('cnt-triplas').innerText = triplas;
 
-        // Preço: R$2 base * 2^duplas * 3^triplas
+        // Validações de limite
+        let errorMsg = '';
+        if (duplas > 5) errorMsg = 'Máximo de 5 duplos permitido.';
+        if (triplas > 5) errorMsg = 'Máximo de 5 triplos permitido.';
+        if ((duplas + triplas) > 5) errorMsg = 'Máximo de 5 jogos cobertos por duplos e triplos combinado.';
+
+        // Calcula preço conforme tabela
         let price = 0;
-        if (partidas === 10) {
-            price = 2.00 * Math.pow(2, duplas) * Math.pow(3, triplas);
+        if (!errorMsg && partidas === 10) {
+            if (triplas === 0) {
+                // Só duplos
+                const duploPrices = [0,4,8,16,32,64];
+                price = duploPrices[duplas] || 0;
+            } else if (duplas === 0) {
+                // Só triplos
+                const triploPrices = [0,6,18,54,162,486];
+                price = triploPrices[triplas] || 0;
+            } else {
+                // Combinações mistas
+                const comboPrices = {
+                    '1,1': 12,
+                    '1,2': 24,
+                    '1,3': 48,
+                    '1,4': 96,
+                    '2,1': 36,
+                    '2,2': 72,
+                    '2,3': 144,
+                    '3,1': 108,
+                    '3,2': 216,
+                    '4,1': 324
+                };
+                price = comboPrices[`${triplas},${duplas}`] || 0;
+            }
         }
-        document.getElementById('footer-price').innerText = `R$ ${price.toFixed(2)}`;
+
+        document.getElementById('footer-price').innerText = price > 0 ? `R$ ${price.toFixed(2)}` : 'R$ 0,00';
 
         // Carrinho total
         const cart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -391,12 +421,15 @@
         document.getElementById('footer-cart-total').innerText = `R$ ${cartTotal.toFixed(2)}`;
         document.getElementById('cart-badge').innerText = cart.length;
 
-        // Botões
+        // Botões e mensagens
         const hasSel = partidas > 0;
         document.getElementById('btn-clear').style.display = hasSel ? 'block' : 'none';
 
-        const canAdd = partidas === 10 && (duplas > 0 || triplas > 0);
+        const canAdd = partidas === 10 && !errorMsg && price > 0;
         document.getElementById('btn-add').style.display = canAdd ? 'block' : 'none';
+
+        // Mensagem de erro
+        document.getElementById('error-msg').textContent = errorMsg;
     }
 
     function clearBets() {
@@ -414,7 +447,30 @@
             if (s.length === 3) triplas++;
         });
 
-        const price = 2.00 * Math.pow(2, duplas) * Math.pow(3, triplas);
+        // Recalcula preço conforme tabela para garantir consistência
+        let price = 0;
+        if (triplas === 0) {
+            const duploPrices = [0,4,8,16,32,64];
+            price = duploPrices[duplas] || 0;
+        } else if (duplas === 0) {
+            const triploPrices = [0,6,18,54,162,486];
+            price = triploPrices[triplas] || 0;
+        } else {
+            const comboPrices = {
+                '1,1': 12,
+                '1,2': 24,
+                '1,3': 48,
+                '1,4': 96,
+                '2,1': 36,
+                '2,2': 72,
+                '2,3': 144,
+                '3,1': 108,
+                '3,2': 216,
+                '4,1': 324
+            };
+            price = comboPrices[`${triplas},${duplas}`] || 0;
+        }
+
         const config = JSON.parse(localStorage.getItem('concursoConfig') || '{}');
 
         const bet = {
@@ -448,7 +504,6 @@
     window.onload = () => {
         loadGames();
         updateUI();
-        // Remove splash após 3 segundos
         setTimeout(() => {
             const splash = document.getElementById('splash-screen');
             if (splash) splash.remove();
