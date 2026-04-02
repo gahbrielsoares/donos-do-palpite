@@ -142,8 +142,7 @@
         try { data = JSON.parse(text); } catch { /* ignore */ }
 
         if (!res.ok || !data || !data.ok) {
-          const detail = data?.error || text || 'Erro desconhecido';
-          throw new Error(detail);
+          const detail = data?.error || (text ? text.substring(0, 300) : 'Sem resposta da função');
         }
 
         // Salvar “registro” local para o admin (até você ter webhook + DB)
