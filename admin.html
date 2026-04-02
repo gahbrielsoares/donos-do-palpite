@@ -47,7 +47,6 @@
         .tab-content { display: none; padding: 20px; }
         .tab-content.active { display: block; }
 
-        /* ===== JOGOS ===== */
         .games-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -144,12 +143,13 @@
             font-weight: bold;
         }
 
-        /* ===== APOSTAS ===== */
         .orders-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .orders-header h3 { color: #1a4a7c; }
@@ -160,6 +160,16 @@
             border-radius: 6px;
             font-size: 13px;
             width: 200px;
+        }
+
+        .btn-clear-bets {
+            background: #e31d1a;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
         }
 
         .orders-table-wrap { overflow-x: auto; }
@@ -189,6 +199,7 @@
         }
         .badge-green { background: #e0ffe0; color: #1a7c1a; }
         .badge-yellow { background: #fff8e0; color: #7c6a1a; }
+        .badge-blue { background: #e0eeff; color: #1a3a7c; }
 
         .btn-view {
             background: #1a4a7c;
@@ -200,7 +211,6 @@
             font-size: 12px;
         }
 
-        /* Modal espelho */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -218,8 +228,8 @@
             border-radius: 12px;
             padding: 25px;
             width: 90%;
-            max-width: 450px;
-            max-height: 80vh;
+            max-width: 500px;
+            max-height: 85vh;
             overflow-y: auto;
         }
 
@@ -241,7 +251,16 @@
         .mirror-game:last-child { border-bottom: none; }
         .mirror-chosen { color: #e31d1a; font-weight: bold; }
 
-        /* Stats cards */
+        .payer-info {
+            background: #f0f7ff;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+        .payer-info div { margin-bottom: 4px; }
+        .payer-info strong { color: #1a4a7c; }
+
         .stats-cards {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -259,7 +278,6 @@
         .stat-card .number { font-size: 28px; font-weight: bold; color: #e31d1a; }
         .stat-card .label { font-size: 12px; color: #777; margin-top: 5px; }
 
-        /* Concurso config */
         .config-card {
             background: white;
             border-radius: 10px;
@@ -278,6 +296,16 @@
             border-radius: 6px;
             font-size: 14px;
         }
+
+        .info-box {
+            background: #fff8e0;
+            border: 1px solid #e0c040;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+            color: #7c6a1a;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -288,31 +316,37 @@
 </header>
 
 <div class="admin-nav">
-    <div class="nav-tab active" onclick="switchAdminTab('jogos')">⚽ Jogos</div>
-    <div class="nav-tab" onclick="switchAdminTab('apostas')">📋 Apostas</div>
-    <div class="nav-tab" onclick="switchAdminTab('config')">🔧 Configurações</div>
+    <div class="nav-tab active" onclick="switchAdminTab('jogos', event)">⚽ Jogos</div>
+    <div class="nav-tab" onclick="switchAdminTab('apostas', event)">📋 Apostas</div>
+    <div class="nav-tab" onclick="switchAdminTab('config', event)">🔧 Configurações</div>
 </div>
 
-<!-- ===== ABA JOGOS ===== -->
+<!-- ABA JOGOS -->
 <div class="tab-content active" id="tab-jogos">
     <h3 style="color:#1a4a7c;margin-bottom:15px;">⚽ Gerenciar Jogos do Concurso</h3>
     <p style="font-size:13px;color:#777;margin-bottom:20px;">
         Clique no escudo para fazer upload da imagem do time. Edite os nomes e clique em <strong>Aplicar</strong>.
     </p>
-
     <div class="games-grid" id="games-editor"></div>
-
     <button class="btn-apply" onclick="applyGames()">✅ Aplicar e Publicar Jogos</button>
     <div class="apply-success" id="apply-success">✅ Jogos publicados com sucesso! A página principal foi atualizada.</div>
 </div>
 
-<!-- ===== ABA APOSTAS ===== -->
+<!-- ABA APOSTAS -->
 <div class="tab-content" id="tab-apostas">
+    <div class="info-box">
+        ⚠️ As apostas abaixo foram registradas <strong>neste navegador</strong> após o pagamento PIX ser gerado.
+        Para ver apostas de outros dispositivos, você precisará de um banco de dados (ex: Supabase).
+    </div>
+
     <div class="stats-cards" id="stats-cards"></div>
 
     <div class="orders-header">
         <h3>📋 Todas as Apostas</h3>
-        <input class="search-bar" type="text" placeholder="🔍 Buscar por nome..." oninput="filterOrders(this.value)">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input class="search-bar" type="text" placeholder="🔍 Buscar por nome ou email..." oninput="filterOrders(this.value)">
+            <button class="btn-clear-bets" onclick="clearAllBets()">🗑️ Limpar apostas</button>
+        </div>
     </div>
 
     <div class="orders-table-wrap">
@@ -320,12 +354,12 @@
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Horário</th>
-                    <th>Usuário</th>
+                    <th>Data/Hora</th>
+                    <th>Apostador</th>
                     <th>Contato</th>
-                    <th>Apostas</th>
+                    <th>CPF</th>
                     <th>Total</th>
-                    <th>Status</th>
+                    <th>Status MP</th>
                     <th>Espelho</th>
                 </tr>
             </thead>
@@ -334,7 +368,7 @@
     </div>
 </div>
 
-<!-- ===== ABA CONFIG ===== -->
+<!-- ABA CONFIG -->
 <div class="tab-content" id="tab-config">
     <div class="config-card">
         <h3>🏆 Configurações do Concurso</h3>
@@ -378,23 +412,15 @@
     </div>
 </div>
 
-<!-- Input de upload oculto -->
 <input type="file" id="upload-input" accept="image/*" style="display:none" onchange="handleUpload(event)">
 
 <script>
     let currentUploadTarget = null;
     let adminGames = JSON.parse(localStorage.getItem('adminGames') || '[]');
 
-    // Inicializa 10 jogos se vazio
     if (adminGames.length === 0) {
         for (let i = 0; i < 10; i++) {
-            adminGames.push({
-                id: i,
-                home: `Time Casa ${i+1}`,
-                away: `Time Visitante ${i+1}`,
-                homeImg: '',
-                awayImg: ''
-            });
+            adminGames.push({ id: i, home: `Time Casa ${i+1}`, away: `Time Visitante ${i+1}`, homeImg: '', awayImg: '' });
         }
     }
 
@@ -403,7 +429,6 @@
         container.innerHTML = adminGames.map((game, i) => `
             <div class="game-editor">
                 <h4>Jogo ${i+1}</h4>
-
                 <div class="team-editor" id="drop-home-${i}"
                     ondragover="event.preventDefault();this.classList.add('drag-over')"
                     ondragleave="this.classList.remove('drag-over')"
@@ -417,9 +442,7 @@
                         <div class="upload-hint">📁 Clique no escudo ou arraste a imagem</div>
                     </div>
                 </div>
-
                 <div style="text-align:center;color:#999;font-size:12px;margin:5px 0;">✕ EMPATE ✕</div>
-
                 <div class="team-editor" id="drop-away-${i}"
                     ondragover="event.preventDefault();this.classList.add('drag-over')"
                     ondragleave="this.classList.remove('drag-over')"
@@ -445,7 +468,6 @@
     function handleUpload(event) {
         const file = event.target.files[0];
         if (!file || !currentUploadTarget) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             const { gameIdx, side } = currentUploadTarget;
@@ -462,7 +484,6 @@
         document.getElementById(`drop-${side}-${gameIdx}`).classList.remove('drag-over');
         const file = event.dataTransfer.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             if (side === 'home') adminGames[gameIdx].homeImg = e.target.result;
@@ -473,35 +494,59 @@
     }
 
     function applyGames() {
-        // Salva nomes editados
         adminGames.forEach((game, i) => {
             game.home = document.getElementById(`home-name-${i}`).value;
             game.away = document.getElementById(`away-name-${i}`).value;
         });
-
         localStorage.setItem('adminGames', JSON.stringify(adminGames));
-
         const success = document.getElementById('apply-success');
         success.style.display = 'block';
         setTimeout(() => success.style.display = 'none', 3000);
     }
 
-    // ===== APOSTAS =====
+    // ===== APOSTAS (novo formato admin_bets do Mercado Pago) =====
+    function getAllBets() {
+        // Suporta tanto o formato novo (admin_bets) quanto o antigo (orders)
+        const newBets = JSON.parse(localStorage.getItem('admin_bets') || '[]');
+        const oldBets = JSON.parse(localStorage.getItem('orders') || '[]');
+
+        // Converte formato antigo para novo se necessário
+        const converted = oldBets.map(o => ({
+            betId: o.id || ('old_' + Math.random()),
+            mpPaymentId: o.mpPaymentId || '-',
+            status: o.status || 'pending',
+            createdAt: o.date || new Date().toISOString(),
+            payer: {
+                name: o.user || '-',
+                email: o.email || '-',
+                phone: o.telefone || '-',
+                cpf: o.cpf || '-'
+            },
+            cart: o.bets || [],
+            total: o.total || 0
+        }));
+
+        return [...newBets, ...converted];
+    }
+
     function renderOrders(filter = '') {
-        const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+        const bets = getAllBets();
         const tbody = document.getElementById('orders-tbody');
 
-        const filtered = orders.filter(o =>
-            o.user?.toLowerCase().includes(filter.toLowerCase()) ||
-            o.email?.toLowerCase().includes(filter.toLowerCase())
+        const filtered = bets.filter(b =>
+            (b.payer?.name || '').toLowerCase().includes(filter.toLowerCase()) ||
+            (b.payer?.email || '').toLowerCase().includes(filter.toLowerCase()) ||
+            (b.payer?.cpf || '').includes(filter)
         );
 
-        // Stats
-        const totalArrecadado = orders.reduce((s, o) => s + (o.total || 0), 0);
+        const totalArrecadado = bets.reduce((s, b) => s + (Number(b.total) || 0), 0);
+        const uniqueEmails = new Set(bets.map(b => b.payer?.email).filter(Boolean));
+
         document.getElementById('stats-cards').innerHTML = `
-            <div class="stat-card"><div class="number">${orders.length}</div><div class="label">Total de Apostas</div></div>
+            <div class="stat-card"><div class="number">${bets.length}</div><div class="label">Total de Apostas</div></div>
             <div class="stat-card"><div class="number">R$ ${totalArrecadado.toFixed(2)}</div><div class="label">Total Arrecadado</div></div>
-            <div class="stat-card"><div class="number">${new Set(orders.map(o=>o.email)).size}</div><div class="label">Usuários Únicos</div></div>
+            <div class="stat-card"><div class="number">${uniqueEmails.size}</div><div class="label">Apostadores Únicos</div></div>
+            <div class="stat-card"><div class="number">${bets.filter(b => b.status === 'approved').length}</div><div class="label">Pagamentos Aprovados</div></div>
         `;
 
         if (filtered.length === 0) {
@@ -509,61 +554,96 @@
             return;
         }
 
-        tbody.innerHTML = filtered.map((order, i) => `
-            <tr>
-                <td><strong>#${i+1}</strong></td>
-                <td>${order.date || '-'}</td>
-                <td>
-                    <strong>${order.user || '-'}</strong><br>
-                    <small style="color:#999">${order.email || ''}</small>
-                </td>
-                <td>${order.telefone || '-'}</td>
-                <td>${order.bets?.length || 0} aposta(s)</td>
-                <td><strong>R$ ${(order.total || 0).toFixed(2)}</strong></td>
-                <td><span class="badge badge-green">✅ Pago</span></td>
-                <td><button class="btn-view" onclick="viewMirror(${i})">🔍 Ver</button></td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = filtered.map((bet, i) => {
+            const statusBadge = bet.status === 'approved'
+                ? '<span class="badge badge-green">✅ Aprovado</span>'
+                : bet.status === 'pending'
+                    ? '<span class="badge badge-yellow">⏳ Pendente</span>'
+                    : `<span class="badge badge-blue">${bet.status || 'gerado'}</span>`;
+
+            const date = bet.createdAt
+                ? new Date(bet.createdAt).toLocaleString('pt-BR')
+                : '-';
+
+            return `
+                <tr>
+                    <td><strong>#${i+1}</strong></td>
+                    <td style="font-size:12px;">${date}</td>
+                    <td>
+                        <strong>${bet.payer?.name || '-'}</strong><br>
+                        <small style="color:#999">${bet.payer?.email || ''}</small>
+                    </td>
+                    <td>${bet.payer?.phone || '-'}</td>
+                    <td style="font-size:12px;">${bet.payer?.cpf || '-'}</td>
+                    <td><strong>R$ ${Number(bet.total || 0).toFixed(2)}</strong></td>
+                    <td>${statusBadge}</td>
+                    <td><button class="btn-view" onclick="viewMirror(${i}, '${filter}')">🔍 Ver</button></td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function filterOrders(val) { renderOrders(val); }
 
-    function viewMirror(index) {
-        const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-        const order = orders[index];
+    function clearAllBets() {
+        if (!confirm('⚠️ Tem certeza que deseja apagar TODAS as apostas? Esta ação não pode ser desfeita.')) return;
+        localStorage.removeItem('admin_bets');
+        localStorage.removeItem('orders');
+        renderOrders();
+    }
+
+    function viewMirror(index, filter) {
+        const bets = getAllBets();
+        const filtered = bets.filter(b =>
+            (b.payer?.name || '').toLowerCase().includes((filter || '').toLowerCase()) ||
+            (b.payer?.email || '').toLowerCase().includes((filter || '').toLowerCase()) ||
+            (b.payer?.cpf || '').includes(filter || '')
+        );
+        const bet = filtered[index];
+        if (!bet) return;
+
         const games = JSON.parse(localStorage.getItem('adminGames') || '[]');
-
-        if (!order) return;
-
-        const optionNames = ['Casa', 'Empate', 'Visitante'];
+        const date = bet.createdAt ? new Date(bet.createdAt).toLocaleString('pt-BR') : '-';
 
         let html = `
-            <p style="font-size:13px;color:#555;margin-bottom:15px;">
-                <strong>${order.user}</strong> — ${order.date}<br>
-                📞 ${order.telefone || 'Não informado'}<br>
-                💰 Total: <strong>R$ ${(order.total||0).toFixed(2)}</strong>
-            </p>
+            <div class="payer-info">
+                <div><strong>👤 Nome:</strong> ${bet.payer?.name || '-'}</div>
+                <div><strong>📧 Email:</strong> ${bet.payer?.email || '-'}</div>
+                <div><strong>📱 WhatsApp:</strong> ${bet.payer?.phone || '-'}</div>
+                <div><strong>🪪 CPF:</strong> ${bet.payer?.cpf || '-'}</div>
+                <div><strong>📅 Data:</strong> ${date}</div>
+                <div><strong>💰 Total:</strong> R$ ${Number(bet.total || 0).toFixed(2)}</div>
+                <div><strong>🏦 ID Mercado Pago:</strong> ${bet.mpPaymentId || '-'}</div>
+                <div><strong>📊 Status:</strong> ${bet.status || '-'}</div>
+            </div>
         `;
 
-        order.bets?.forEach((bet, bi) => {
-            html += `<div style="margin-bottom:15px;padding:10px;background:#f9f9f9;border-radius:8px;">
-                <strong style="color:#1a4a7c;">Aposta ${bi+1} — R$ ${bet.price?.toFixed(2)}</strong>`;
+        // Exibe os jogos do carrinho
+        const cart = bet.cart || [];
+        if (cart.length > 0) {
+            html += '<strong style="color:#1a4a7c;">🎯 Palpites:</strong>';
+            cart.forEach((item, bi) => {
+                html += `<div style="margin:10px 0;padding:10px;background:#f9f9f9;border-radius:8px;">
+                    <strong style="color:#1a4a7c;">Aposta ${bi+1}</strong>`;
 
-            bet.selections?.forEach((sel, gi) => {
-                const game = games[gi] || { home: `Time A`, away: `Time B` };
-                const chosen = sel.map(idx => {
-                    if (idx === 0) return game.home;
-                    if (idx === 1) return 'Empate';
-                    return game.away;
+                // Suporta tanto formato novo (selections) quanto antigo
+                const selections = item.selections || item.games || [];
+                selections.forEach((sel, gi) => {
+                    const game = games[gi] || { home: `Time A ${gi+1}`, away: `Time B ${gi+1}` };
+                    const chosen = Array.isArray(sel)
+                        ? sel.map(idx => idx === 0 ? game.home : idx === 1 ? 'Empate' : game.away).join(' / ')
+                        : sel;
+                    html += `<div class="mirror-game">
+                        <span style="color:#555">${game.home} x ${game.away}:</span>
+                        <span class="mirror-chosen"> ${chosen}</span>
+                    </div>`;
                 });
-                html += `<div class="mirror-game">
-                    <span style="color:#555">${game.home} x ${game.away}:</span>
-                    <span class="mirror-chosen"> ${chosen.join(' / ')}</span>
-                </div>`;
-            });
 
-            html += `</div>`;
-        });
+                html += '</div>';
+            });
+        } else {
+            html += '<div style="color:#999;font-size:13px;">Detalhes dos palpites não disponíveis.</div>';
+        }
 
         document.getElementById('modal-content').innerHTML = html;
         document.getElementById('modal-overlay').classList.add('open');
@@ -575,7 +655,6 @@
         }
     }
 
-    // ===== CONFIG =====
     function saveConfig() {
         const config = {
             concurso: document.getElementById('cfg-concurso').value,
@@ -593,11 +672,11 @@
         alert('✅ Senha alterada!');
     }
 
-    function switchAdminTab(tab) {
+    function switchAdminTab(tab, event) {
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.getElementById(`tab-${tab}`).classList.add('active');
-        event.target.classList.add('active');
+        if (event && event.target) event.target.classList.add('active');
         if (tab === 'apostas') renderOrders();
         if (tab === 'config') loadConfig();
     }
@@ -608,11 +687,8 @@
         if (config.data) document.getElementById('cfg-data').value = config.data;
     }
 
-    function logout() {
-        window.location.href = 'login.html';
-    }
+    function logout() { window.location.href = 'login.html'; }
 
-    // Proteção de rota admin
     window.onload = () => {
         renderGamesEditor();
         renderOrders();
