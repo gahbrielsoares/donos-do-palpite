@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Espelho da sua Aposta</title>
+  <style>
+    /* Inclua o CSS do espelho conforme o código anterior */
+  </style>
+</head>
+<body>
+<header>
+  <h2>🏆 Espelho da sua Aposta</h2>
+</header>
+
+<div class="alert">
+  <strong>⚠️ ATENÇÃO — SALVE AGORA!</strong>
+  Guarde o espelho da sua aposta para conferência. Não nos responsabilizamos por enviar ou conferir por outro meio. Entraremos em contato apenas em caso de premiação.
+</div>
+
+<div class="card" id="payer-card">
+  <h3>Seus Dados</h3>
+  <div id="payer-info"></div>
+</div>
+
+<div id="bets-container"></div>
+
+<button class="btn-save" onclick="salvarEspelho()">📥 Salvar Espelho (Print / PDF)</button>
+<a href="index.html" class="btn-home">Fazer nova aposta</a>
+<p class="disclaimer">Donos do Palpite — Guarde este comprovante. Somente entraremos em contato em caso de premiação.</p>
+
+<script>
+  window.onload = () => {
+    const raw = localStorage.getItem('lastPayment');
+    if (!raw) {
+      document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#999">Nenhuma aposta encontrada.<br><a href="index.html">Voltar ao início</a></div>';
+      return;
+    }
+
+    const data = JSON.parse(raw);
+    const { payer, cart, total, mpPaymentId, externalReference, date } = data;
+    const games = JSON.parse(localStorage.getItem('adminGames') || '[]');
+
+    document.getElementById('payer-info').innerHTML = `
+      <div class="info-row"><span>Nome</span><strong>${payer?.name || '-'}</strong></div>
+      <div class="info-row"><span>E-mail</span><strong>${payer?.email || '-'}</strong></div>
+      <div class="info-row"><span>WhatsApp</span><strong>${payer?.phone || '-'}</strong></div>
+      <div class="info-row"><span>CPF</span><strong>${payer?.cpf || '-'}</strong></div>
+      <div class="info-row"><span>Total Pago</span><strong>R$ ${Number(total).toFixed(2)}</strong></div>
+      <div class="info-row"><span>ID Pagamento</span><strong>${mpPaymentId || '-'}</strong></div>
+      <div class="info-row"><span>Data</span><strong>${date || new Date().toLocaleString('pt-BR')}</strong></div>
+    `;
+
+    const container = document.getElementById('bets-container');
+    container.innerHTML = (cart || []).map((bet, bi) => {
+      const optLabel = (sel, game) => {
+        const opts = [game?.home || 'Casa', 'Empate', game?.away || 'Visitante'];
+        return sel.length ? sel.map(i => opts[i]).join(' + ') : '—';
+      };
+      return `
+        <div class="card">
+          <h3>Aposta ${bi + 1} — R$ ${Number(bet.price).toFixed(2)}</h3>
+          ${(bet.selections || []).map((sel, i) => {
+            const g = games[i] || {};
+            return `<div class="game-row">
+              <span>${i+1}. ${g.home||'?'} x ${g.away||'?'}</span><br>
+              <span class="palpite">▶ ${optLabel(sel, g)}</span>
+            </div>`;
+          }).join('')}
+        </div>`;
+    }).join('');
+  };
+
+  function salvarEspelho() {
+    window.print();
+  }
+</script>
+</body>
+</html>
