@@ -172,6 +172,30 @@
         all.unshift(betRecord);
         localStorage.setItem('admin_bets', JSON.stringify(all));
 
+        // Enviar email com os dados da aposta
+        fetch('/.netlify/functions/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            payer,
+            cart: getCart(),
+            total: amount,
+            mpPaymentId: data.mp_payment_id,
+            externalReference: data.external_reference
+          })
+        })
+        .then(res => res.json())
+        .then(resp => {
+          if (resp.ok) {
+            console.log('Email enviado com sucesso');
+          } else {
+            console.error('Erro ao enviar email:', resp.error);
+          }
+        })
+        .catch(err => {
+          console.error('Erro na requisição do email:', err);
+        });
+
         // UI
         document.getElementById('pixResult').style.display = 'block';
         document.getElementById('qrImg').src = 'data:image/png;base64,' + data.pix.qr_code_base64;
