@@ -5,8 +5,215 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Donos do Palpite - Carrinho</title>
     <style>
-        /* (mesmo CSS do código anterior, omitido aqui para brevidade) */
-        /* Inclua todo o CSS do carrinho.html que enviei anteriormente */
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+          background: #f5f5f5;
+          color: #222;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
+
+        header {
+          background: #e31d1a;
+          color: white;
+          display: flex;
+          align-items: center;
+          padding: 1rem 1.5rem;
+          font-weight: bold;
+          font-size: 1.2rem;
+          gap: 1rem;
+        }
+
+        header a {
+          color: white;
+          font-size: 1.5rem;
+          text-decoration: none;
+          cursor: pointer;
+        }
+
+        .header-icons {
+          margin-left: auto;
+          display: flex;
+          gap: 1rem;
+          font-size: 1.3rem;
+        }
+
+        .alert-box {
+          background: #fff3f3;
+          border: 1px solid #e31d1a;
+          color: #b71c1c;
+          padding: 1rem 1.5rem;
+          font-size: 1rem;
+          line-height: 1.4;
+        }
+
+        .section-title {
+          margin: 1rem 1.5rem 0.5rem;
+          font-weight: 700;
+          font-size: 1.1rem;
+          color: #e31d1a;
+        }
+
+        #cart-list {
+          flex-grow: 1;
+          padding: 0 1.5rem 1rem;
+          overflow-y: auto;
+          max-height: calc(100vh - 220px);
+        }
+
+        .empty-cart {
+          text-align: center;
+          color: #999;
+          padding: 3rem 1rem;
+        }
+
+        .empty-cart .icon {
+          font-size: 4rem;
+          margin-bottom: 1rem;
+        }
+
+        .empty-cart a {
+          color: #e31d1a;
+          font-weight: 700;
+          text-decoration: none;
+        }
+
+        .bet-card {
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+          margin-bottom: 1rem;
+          padding: 1rem;
+        }
+
+        .bet-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.8rem;
+        }
+
+        .bet-name {
+          font-weight: 700;
+          font-size: 1rem;
+          text-transform: uppercase;
+          color: #e31d1a;
+        }
+
+        .bet-price {
+          font-weight: 700;
+          font-size: 1rem;
+          color: #333;
+        }
+
+        .btn-delete {
+          background: transparent;
+          border: none;
+          font-size: 1.2rem;
+          cursor: pointer;
+          color: #e31d1a;
+          transition: color 0.3s ease;
+        }
+
+        .btn-delete:hover {
+          color: #b71512;
+        }
+
+        .bet-game {
+          margin-bottom: 0.5rem;
+        }
+
+        .bet-options {
+          display: flex;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+
+        .bet-option {
+          background: #eee;
+          border-radius: 20px;
+          padding: 0.3rem 0.8rem;
+          font-size: 0.9rem;
+          color: #555;
+          display: flex;
+          align-items: center;
+          gap: 0.3rem;
+          user-select: none;
+        }
+
+        .bet-option.chosen {
+          background: #e31d1a;
+          color: white;
+          font-weight: 700;
+        }
+
+        .dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          border: 2px solid #ccc;
+          background: transparent;
+          transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .dot.filled {
+          background-color: white;
+          border-color: white;
+        }
+
+        footer {
+          background: #e31d1a;
+          color: white;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.5rem;
+          position: fixed;
+          bottom: 0;
+          width: 100%;
+          box-shadow: 0 -2px 6px rgb(0 0 0 / 0.3);
+          gap: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .footer-total {
+          font-weight: 700;
+          font-size: 1.2rem;
+        }
+
+        .btn-continue, .btn-advance {
+          background: white;
+          color: #e31d1a;
+          border-radius: 30px;
+          padding: 0.6rem 1.5rem;
+          font-weight: 700;
+          text-decoration: none;
+          text-align: center;
+          cursor: pointer;
+          flex: 1 1 150px;
+          transition: background-color 0.3s ease;
+        }
+
+        .btn-continue:hover {
+          background-color: #f0f0f0;
+        }
+
+        .btn-advance:hover {
+          background-color: #f9d6d6;
+        }
+
+        .btn-advance[style*="pointer-events: none"] {
+          background-color: #f9d6d6;
+          color: #aaa;
+          cursor: default;
+        }
     </style>
 </head>
 <body>
@@ -15,8 +222,8 @@
     <a href="index.html">&#8592;</a>
     <h2>Carrinho de apostas</h2>
     <div class="header-icons">
-        <span onclick="clearAll()" style="cursor:pointer">🗑️</span>
-        <span>☆</span>
+        <span onclick="clearAll()" style="cursor:pointer" title="Limpar todas as apostas">🗑️</span>
+        <span title="Favoritos">☆</span>
     </div>
 </header>
 
@@ -70,7 +277,7 @@
                     </div>
                     <div style="display:flex;align-items:center;gap:10px;">
                         <span class="bet-price">R$ ${bet.price.toFixed(2)}</span>
-                        <button class="btn-delete" onclick="removeBet(${index})">🗑️</button>
+                        <button class="btn-delete" onclick="removeBet(${index})" title="Remover aposta">🗑️</button>
                     </div>
                 </div>
                 ${renderBetGames(bet)}
