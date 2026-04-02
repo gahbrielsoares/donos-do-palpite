@@ -420,12 +420,16 @@
         const bet = {
             id: Date.now(),
             concurso: config.concurso || '001',
-            selections: adminGames.map((_, i) => selections[i] || []),
             price,
             user: user.nome,
             email: user.email,
             telefone: user.telefone,
-            date: new Date().toLocaleString('pt-BR')
+            date: new Date().toLocaleString('pt-BR'),
+            selections: adminGames.map((game, i) => ({
+                choices: selections[i] || [],
+                home: game.home,
+                away: game.away
+            }))
         };
 
         cart.push(bet);
