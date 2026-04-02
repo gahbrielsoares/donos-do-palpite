@@ -1,66 +1,107 @@
 const nodemailer = require('nodemailer');
 
-function withCors(h = {}) {
-  return { ...h, 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Content-Type': 'application/json' };
+function withCors(headers = {}) {
+  return {
+    ...headers,
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
 }
 
 exports.handler = async (event) => {
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: withCors(), body: '' };
-  if (event.httpMethod !== 'POST') return { statusCode: 405, headers: withCors(), body: JSON.stringify({ error: 'Método não permitido' }) };
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers: withCors(), body: '' };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      headers: withCors(),
+      body: JSON.stringify({ error: 'Método não permitido' }),
+    };
+  }
 
   try {
     const { payer, cart, total, mpPaymentId, externalReference } = JSON.parse(event.body || '{}');
     const games = JSON.parse(process.env.ADMIN_GAMES || '[]');
 
+    // Função para formatar os palpites de cada jogo
     const optLabel = (sel, game) => {
       const opts = [game?.home || 'Time Casa', 'Empate', game?.away || 'Time Visitante'];
-      return sel.map(i => opts[i]).join(' + ');
+      return sel.length ? sel.map(i => opts[i]).join(' + ') : '—';
     };
 
-    const gamesHtml = cart.map((bet, bi) =>
-      `<h3 style="color:#e31d1a">Aposta ${bi + 1} — R$ ${Number(bet.price).toFixed(2)}</h3>
+    // Monta o HTML das apostas
+    const betsHtml = cart.map((bet, i) => `
+      <h3 style="color:#e31d1a;">Aposta ${i + 1} — R$ ${Number(bet.price).toFixed(2)}</h3>
       <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:13px">
-        <tr style="background:#f0f0f0"><th>#</th><th>Jogo</th><th>Palpite(s)</th></tr>
-        ${(bet.selections || []).map((sel, i) => {
-          const g = games[i] || {};
-          return `<tr><td>${i+1}</td><td>${g.home||'?'} x ${g.away||'?'}</td><td><strong>${optLabel(sel, g)}</strong></td></tr>`;
-        }).join('')}
-      </table><br>`
-    ).join('');
+        <thead style="background:#f0f0f0;">
+          <tr><th>#</th><th>Jogo</th><th>Palpite(s)</th></tr>
+        </thead>
+        <tbody>
+          ${(bet.selections || []).map((sel, idx) => {
+            const g = games[idx] || {};
+            return `<tr>
+              <td>${idx + 1}</td>
+              <td>${g.home || '?'} x ${g.away || '?'}</td>
+              <td><strong>${optLabel(sel, g)}</strong></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <br/>
+    `).join('');
 
+    // Monta o corpo do email em HTML
     const html = `
-      <div style="font-family:Arial,sans-serif;max-width:700px">
-        <h2 style="background:#e31d1a;color:white;padding:15px;margin:0">🏆 Nova Aposta — Donos do Palpite</h2>
-        <div style="padding:15px;background:#fff;border:1px solid #ddd">
+      <div style="font-family:Arial,sans-serif;max-width:700px;">
+        <h2 style="background:#e31d1a;color:#fff;padding:15px;margin:0;">🏆 Nova Aposta — Donos do Palpite</h2>
+        <div style="padding:15px;background:#fff;border:1px solid #ddd;">
           <h3>Dados do Apostador</h3>
-          <p><b>Nome:</b> ${payer?.name}</p>
-          <p><b>E-mail:</b> ${payer?.email}</p>
-          <p><b>WhatsApp:</b> ${payer?.phone}</p>
-          <p><b>CPF:</b> ${payer?.cpf}</p>
+          <p><b>Nome:</b> ${payer?.name || '-'}</p>
+          <p><b>E-mail:</b> ${payer?.email || '-'}</p>
+          <p><b>WhatsApp:</b> ${payer?.phone || '-'}</p>
+          <p><b>CPF:</b> ${payer?.cpf || '-'}</p>
           <p><b>Total Pago:</b> R$ ${Number(total).toFixed(2)}</p>
-          <p><b>ID Mercado Pago:</b> ${mpPaymentId}</p>
-          <p><b>Referência:</b> ${externalReference}</p>
+          <p><b>ID Mercado Pago:</b> ${mpPaymentId || '-'}</p>
+          <p><b>Referência:</b> ${externalReference || '-'}</p>
           <p><b>Data:</b> ${new Date().toLocaleString('pt-BR')}</p>
-          <hr>
+          <hr/>
           <h3>Espelho das Apostas</h3>
-          ${gamesHtml}
+          ${betsHtml}
         </div>
-      </div>`;
+      </div>
+    `;
 
+    // Configurar o transporte SMTP (exemplo com Gmail)
     const transporter = nodemailer.createTransport({
       service: 'gmail',
-      auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
+      auth: {
+        user: process.env.GMAIL_USER, // seu email Gmail
+        pass: process.env.GMAIL_PASS, // senha de app do Gmail
+      },
     });
 
+    // Enviar o email
     await transporter.sendMail({
       from: `"Donos do Palpite" <${process.env.GMAIL_USER}>`,
-      to: process.env.GMAIL_USER,
-      subject: `🏆 Nova Aposta - ${payer?.name} - R$ ${Number(total).toFixed(2)}`,
-      html
+      to: process.env.GMAIL_USER, // pode ser outro email admin
+      subject: `🏆 Nova Aposta - ${payer?.name || 'Cliente'} - R$ ${Number(total).toFixed(2)}`,
+      html,
     });
 
-    return { statusCode: 200, headers: withCors(), body: JSON.stringify({ ok: true }) };
-  } catch (err) {
-    return { statusCode: 400, headers: withCors(), body: JSON.stringify({ ok: false, error: err.message }) };
+    return {
+      statusCode: 200,
+      headers: withCors(),
+      body: JSON.stringify({ ok: true }),
+    };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      headers: withCors(),
+      body: JSON.stringify({ ok: false, error: error.message }),
+    };
   }
 };
