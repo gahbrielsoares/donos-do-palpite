@@ -143,6 +143,7 @@
 
         if (!res.ok || !data || !data.ok) {
           const detail = data?.error || (text ? text.substring(0, 300) : 'Sem resposta da função');
+          throw new Error(detail);
         }
 
         // Salvar “registro” local para o admin (até você ter webhook + DB)
