@@ -98,7 +98,6 @@
 
     function buildBetPayload() {
       const cart = getCart();
-      // Você pode mandar o espelho do carrinho; mantenha tamanho moderado.
       return {
         id: 'bet_' + Date.now(),
         games: cart
@@ -145,6 +144,20 @@
           const detail = data?.error || (text ? text.substring(0, 300) : 'Sem resposta da função');
           throw new Error(detail);
         }
+
+        // Salvar dados para a página espelho
+        localStorage.setItem('lastPayment', JSON.stringify({
+          payer,
+          cart: getCart(),
+          total: amount,
+          mpPaymentId: data.mp_payment_id,
+          externalReference: data.external_reference,
+          date: new Date().toLocaleString('pt-BR')
+        }));
+
+        // Limpar carrinho e redirecionar para espelho
+        localStorage.setItem('cart', '[]');
+        setTimeout(() => { window.location.href = 'espelho.html'; }, 1500);
 
         // Salvar “registro” local para o admin (até você ter webhook + DB)
         const betRecord = {
