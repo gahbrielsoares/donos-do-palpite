@@ -306,23 +306,126 @@
 </div>
 
 <script>
+    // =========================================================
+    // ✏️  CONFIGURAÇÃO SEMANAL — EDITE AQUI TODA SEMANA
+    // =========================================================
+    // Instruções:
+    //   • "home"    → nome do time da casa
+    //   • "away"    → nome do time visitante
+    //   • "homeImg" → link/URL da logo do time da casa  (deixe '' para usar ícone padrão)
+    //   • "awayImg" → link/URL da logo do time visitante (deixe '' para usar ícone padrão)
+    //
+    // Exemplo de link de imagem:
+    //   "homeImg": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Flamengo_logo.svg/200px-Flamengo_logo.svg.png"
+    //
+    // Precisa ter exatamente 10 jogos.
+    // =========================================================
+
+    const JOGOS_DA_SEMANA = [
+        // Jogo 1
+        {
+            home:    "Corinthians",
+            away:    "Palmeiras",
+            homeImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Sport_Club_Corinthians_Paulista.png/120px-Sport_Club_Corinthians_Paulista.png",
+            awayImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Palmeiras_logo.svg/120px-Palmeiras_logo.svg.png"
+        },
+        // Jogo 2
+        {
+            home:    "Flamengo",
+            away:    "Fluminense",
+            homeImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Flamengo_braz_logo.svg/120px-Flamengo_braz_logo.svg.png",
+            awayImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Fluminense_FC_logo.svg/120px-Fluminense_FC_logo.svg.png"
+        },
+        // Jogo 3
+        {
+            home:    "São Paulo",
+            away:    "Santos",
+            homeImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/S%C3%A3o_Paulo_FC.svg/120px-S%C3%A3o_Paulo_FC.svg.png",
+            awayImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Santos_FC_logo.svg/120px-Santos_FC_logo.svg.png"
+        },
+        // Jogo 4
+        {
+            home:    "Atlético-MG",
+            away:    "Cruzeiro",
+            homeImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Atletico_mineiro_galo.png/120px-Atletico_mineiro_galo.png",
+            awayImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Cruzeiro_Esporte_Clube_-_escudo.svg/120px-Cruzeiro_Esporte_Clube_-_escudo.svg.png"
+        },
+        // Jogo 5
+        {
+            home:    "Grêmio",
+            away:    "Internacional",
+            homeImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Gremio_logo.svg/120px-Gremio_logo.svg.png",
+            awayImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Sport_Club_Internacional.svg/120px-Sport_Club_Internacional.svg.png"
+        },
+        // Jogo 6
+        {
+            home:    "Botafogo",
+            away:    "Vasco",
+            homeImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Botafogo_de_Futebol_e_Regatas_logo.svg/120px-Botafogo_de_Futebol_e_Regatas_logo.svg.png",
+            awayImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Vasco_da_Gama_logo.svg/120px-Vasco_da_Gama_logo.svg.png"
+        },
+        // Jogo 7
+        {
+            home:    "Bahia",
+            away:    "Vitória",
+            homeImg: "",
+            awayImg: ""
+        },
+        // Jogo 8
+        {
+            home:    "Fortaleza",
+            away:    "Ceará",
+            homeImg: "",
+            awayImg: ""
+        },
+        // Jogo 9
+        {
+            home:    "Athletico-PR",
+            away:    "Coritiba",
+            homeImg: "",
+            awayImg: ""
+        },
+        // Jogo 10
+        {
+            home:    "Bragantino",
+            away:    "Guarani",
+            homeImg: "",
+            awayImg: ""
+        }
+    ];
+
+    // =========================================================
+    // ✏️  CONFIGURAÇÃO DO CONCURSO — edite número e data
+    // =========================================================
+    const CONCURSO = {
+        numero: "001",          // Número do concurso
+        data:   "2025-04-12"    // Data no formato AAAA-MM-DD
+    };
+    // =========================================================
+    // NÃO MEXA ABAIXO DESTA LINHA
+    // =========================================================
+
     let selections = {};
     let adminGames = [];
 
     function loadGames() {
-        adminGames = JSON.parse(localStorage.getItem('adminGames') || '[]');
+        // Usa sempre os jogos definidos manualmente acima
+        adminGames = JOGOS_DA_SEMANA.map((jogo, i) => ({
+            id: i,
+            home:    jogo.home    || `Time Casa ${i+1}`,
+            away:    jogo.away    || `Time Visitante ${i+1}`,
+            homeImg: jogo.homeImg || '',
+            awayImg: jogo.awayImg || ''
+        }));
 
-        if (adminGames.length === 0) {
-            for (let i = 0; i < 10; i++) {
-                adminGames.push({ id: i, home: `Time Casa ${i+1}`, away: `Time Visitante ${i+1}`, homeImg: '', awayImg: '' });
-            }
-        }
+        // Aplica configuração do concurso
+        document.getElementById('header-concurso').innerHTML =
+            `Concurso<br><strong>${CONCURSO.numero}</strong>`;
 
-        const config = JSON.parse(localStorage.getItem('concursoConfig') || '{}');
-        if (config.concurso) document.getElementById('header-concurso').innerHTML = `Concurso<br><strong>${config.concurso}</strong>`;
-        if (config.data) {
-            const d = new Date(config.data);
-            document.getElementById('header-data').innerHTML = `Data<br><strong>${d.toLocaleDateString('pt-BR')}</strong>`;
+        if (CONCURSO.data) {
+            const d = new Date(CONCURSO.data + 'T12:00:00');
+            document.getElementById('header-data').innerHTML =
+                `Data<br><strong>${d.toLocaleDateString('pt-BR')}</strong>`;
         }
 
         renderGames();
@@ -333,14 +436,18 @@
         container.innerHTML = adminGames.map((game, i) => `
             <div class="game-card" data-idx="${i}">
                 <div class="option" onclick="toggle(${i}, 0)">
-                    ${game.homeImg ? `<img src="${game.homeImg}">` : `<div style="font-size:28px">🛡️</div>`}
+                    ${game.homeImg
+                        ? `<img src="${game.homeImg}" onerror="this.style.display='none';this.nextSibling.style.display='block'" /><div style="font-size:28px;display:none">🛡️</div>`
+                        : `<div style="font-size:28px">🛡️</div>`}
                     <span>${game.home}</span>
                 </div>
                 <div class="option empate" onclick="toggle(${i}, 1)">
                     ✕<br><span style="font-size:10px;font-weight:bold;color:#555">EMPATE</span>
                 </div>
                 <div class="option" onclick="toggle(${i}, 2)">
-                    ${game.awayImg ? `<img src="${game.awayImg}">` : `<div style="font-size:28px">🛡️</div>`}
+                    ${game.awayImg
+                        ? `<img src="${game.awayImg}" onerror="this.style.display='none';this.nextSibling.style.display='block'" /><div style="font-size:28px;display:none">🛡️</div>`
+                        : `<div style="font-size:28px">🛡️</div>`}
                     <span>${game.away}</span>
                 </div>
             </div>
@@ -356,7 +463,6 @@
     }
 
     function updateUI() {
-        // Atualiza visual
         document.querySelectorAll('.game-card').forEach(card => {
             const idx = parseInt(card.dataset.idx);
             card.querySelectorAll('.option').forEach((opt, oi) => {
@@ -378,35 +484,24 @@
         document.getElementById('cnt-duplas').innerText = duplas;
         document.getElementById('cnt-triplas').innerText = triplas;
 
-        // Validações de limite
         let errorMsg = '';
         if (duplas > 5) errorMsg = 'Máximo de 5 duplos permitido.';
         if (triplas > 5) errorMsg = 'Máximo de 5 triplos permitido.';
         if ((duplas + triplas) > 5) errorMsg = 'Máximo de 5 jogos cobertos por duplos e triplos combinado.';
 
-        // Calcula preço conforme tabela
         let price = 0;
         if (!errorMsg && partidas === 10) {
             if (triplas === 0) {
-                // Só duplos
                 const duploPrices = [0,4,8,16,32,64];
                 price = duploPrices[duplas] || 0;
             } else if (duplas === 0) {
-                // Só triplos
                 const triploPrices = [0,6,18,54,162,486];
                 price = triploPrices[triplas] || 0;
             } else {
-                // Combinações mistas
                 const comboPrices = {
-                    '1,1': 12,
-                    '1,2': 24,
-                    '1,3': 48,
-                    '1,4': 96,
-                    '2,1': 36,
-                    '2,2': 72,
-                    '2,3': 144,
-                    '3,1': 108,
-                    '3,2': 216,
+                    '1,1': 12, '1,2': 24, '1,3': 48, '1,4': 96,
+                    '2,1': 36, '2,2': 72, '2,3': 144,
+                    '3,1': 108, '3,2': 216,
                     '4,1': 324
                 };
                 price = comboPrices[`${triplas},${duplas}`] || 0;
@@ -415,20 +510,17 @@
 
         document.getElementById('footer-price').innerText = price > 0 ? `R$ ${price.toFixed(2)}` : 'R$ 0,00';
 
-        // Carrinho total
         const cart = JSON.parse(localStorage.getItem('cart') || '[]');
         const cartTotal = cart.reduce((s, b) => s + b.price, 0);
         document.getElementById('footer-cart-total').innerText = `R$ ${cartTotal.toFixed(2)}`;
         document.getElementById('cart-badge').innerText = cart.length;
 
-        // Botões e mensagens
         const hasSel = partidas > 0;
         document.getElementById('btn-clear').style.display = hasSel ? 'block' : 'none';
 
         const canAdd = partidas === 10 && !errorMsg && price > 0;
         document.getElementById('btn-add').style.display = canAdd ? 'block' : 'none';
 
-        // Mensagem de erro
         document.getElementById('error-msg').textContent = errorMsg;
     }
 
@@ -447,7 +539,6 @@
             if (s.length === 3) triplas++;
         });
 
-        // Recalcula preço conforme tabela para garantir consistência
         let price = 0;
         if (triplas === 0) {
             const duploPrices = [0,4,8,16,32,64];
@@ -457,25 +548,17 @@
             price = triploPrices[triplas] || 0;
         } else {
             const comboPrices = {
-                '1,1': 12,
-                '1,2': 24,
-                '1,3': 48,
-                '1,4': 96,
-                '2,1': 36,
-                '2,2': 72,
-                '2,3': 144,
-                '3,1': 108,
-                '3,2': 216,
+                '1,1': 12, '1,2': 24, '1,3': 48, '1,4': 96,
+                '2,1': 36, '2,2': 72, '2,3': 144,
+                '3,1': 108, '3,2': 216,
                 '4,1': 324
             };
             price = comboPrices[`${triplas},${duplas}`] || 0;
         }
 
-        const config = JSON.parse(localStorage.getItem('concursoConfig') || '{}');
-
         const bet = {
             id: Date.now(),
-            concurso: config.concurso || '001',
+            concurso: CONCURSO.numero,
             price,
             user: user.nome,
             email: user.email,
@@ -491,7 +574,6 @@
         cart.push(bet);
         localStorage.setItem('cart', JSON.stringify(cart));
 
-        // Mostra tela de sucesso
         document.getElementById('success-overlay').classList.add('show');
         clearBets();
     }
