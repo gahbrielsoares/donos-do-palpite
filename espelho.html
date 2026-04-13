@@ -74,27 +74,52 @@
     .info-row strong {
       font-weight: 700;
       color: #222;
+      text-align: right;
+      max-width: 60%;
+      word-break: break-word;
     }
 
     .game-row {
-      margin-bottom: 0.8rem;
-      font-size: 1rem;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 0.7rem;
+      font-size: 0.95rem;
       color: #333;
+      border-bottom: 1px solid #f0f0f0;
+      padding-bottom: 0.5rem;
     }
 
-    .game-row span:first-child {
+    .game-num {
+      font-weight: 700;
+      color: #999;
+      min-width: 22px;
+      font-size: 0.85rem;
+    }
+
+    .game-matchup {
+      flex: 1;
       font-weight: 600;
-      display: block;
-      margin-bottom: 0.2rem;
     }
 
     .palpite {
       color: #e31d1a;
       font-weight: 700;
-      font-size: 1rem;
-      display: inline-block;
-      margin-left: 0.3rem;
+      font-size: 0.95rem;
+      white-space: nowrap;
     }
+
+    .tipo-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .tipo-simples { background: #e8f5e9; color: #2e7d32; }
+    .tipo-duplo   { background: #fff8e1; color: #f57f17; }
+    .tipo-triplo  { background: #fce4ec; color: #c62828; }
 
     button.btn-save {
       background: #e31d1a;
@@ -112,9 +137,7 @@
       transition: background-color 0.3s ease;
     }
 
-    button.btn-save:hover {
-      background-color: #b71512;
-    }
+    button.btn-save:hover { background-color: #b71512; }
 
     a.btn-home {
       display: block;
@@ -126,9 +149,7 @@
       margin-bottom: 2rem;
     }
 
-    a.btn-home:hover {
-      text-decoration: underline;
-    }
+    a.btn-home:hover { text-decoration: underline; }
 
     p.disclaimer {
       text-align: center;
@@ -140,26 +161,15 @@
     }
 
     @media print {
-      button.btn-save, a.btn-home {
-        display: none !important;
-      }
-      body {
-        padding: 0;
-        background: white;
-        color: black;
-      }
-      header, .alert, .card {
-        box-shadow: none;
-        border: none;
-        background: white;
-      }
+      button.btn-save, a.btn-home { display: none !important; }
+      body { padding: 0; background: white; color: black; }
+      header, .alert, .card { box-shadow: none; border: 1px solid #ccc; background: white; }
     }
   </style>
 </head>
 <body>
-<header>
-  🏆 Espelho da sua Aposta
-</header>
+
+<header>🏆 Espelho da sua Aposta</header>
 
 <div class="alert">
   ⚠️ ATENÇÃO — SALVE AGORA!<br>
@@ -173,7 +183,7 @@
 
 <div id="bets-container"></div>
 
-<button class="btn-save" onclick="salvarEspelho()">📥 Salvar Espelho (Print / PDF)</button>
+<button class="btn-save" onclick="window.print()">📥 Salvar Espelho (Print / PDF)</button>
 <a href="index.html" class="btn-home">Fazer nova aposta</a>
 <p class="disclaimer">Donos do Palpite — Guarde este comprovante. Somente entraremos em contato em caso de premiação.</p>
 
@@ -187,8 +197,10 @@
 
     const data = JSON.parse(raw);
     const { payer, cart, total, mpPaymentId, externalReference, date } = data;
-    const games = JSON.parse(localStorage.getItem('adminGames') || '[]');
 
+    // ----------------------------------------------------------
+    // Dados do apostador
+    // ----------------------------------------------------------
     document.getElementById('payer-info').innerHTML = `
       <div class="info-row"><span>Nome</span><strong>${payer?.name || '-'}</strong></div>
       <div class="info-row"><span>E-mail</span><strong>${payer?.email || '-'}</strong></div>
@@ -199,29 +211,54 @@
       <div class="info-row"><span>Data</span><strong>${date || new Date().toLocaleString('pt-BR')}</strong></div>
     `;
 
+    // ----------------------------------------------------------
+    // Helper: transforma índices de escolha em texto legível
+    // Usa os nomes que já estão salvos dentro de bet.selections
+    // (home e away foram gravados no addToCart do index.html)
+    // ----------------------------------------------------------
+    function optLabel(choices, home, away) {
+      const opts = [home || 'Casa', 'Empate', away || 'Visitante'];
+      if (!choices || choices.length === 0) return '—';
+      return choices.map(i => opts[i]).join(' + ');
+    }
+
+    function tipoBadge(qtd) {
+      if (qtd === 1) return '<span class="tipo-badge tipo-simples">Simples</span>';
+      if (qtd === 2) return '<span class="tipo-badge tipo-duplo">Duplo</span>';
+      if (qtd === 3) return '<span class="tipo-badge tipo-triplo">Triplo</span>';
+      return '';
+    }
+
+    // ----------------------------------------------------------
+    // Renderiza cada aposta do carrinho
+    // ----------------------------------------------------------
     const container = document.getElementById('bets-container');
+
     container.innerHTML = (cart || []).map((bet, bi) => {
-      const optLabel = (sel, game) => {
-        const opts = [game?.home || 'Casa', 'Empate', game?.away || 'Visitante'];
-        return sel.length ? sel.map(i => opts[i]).join(' + ') : '—';
-      };
+      // bet.selections é um array de objetos: { home, away, choices }
+      // conforme salvo em addToCart() no index.html
+      const jogosHtml = (bet.selections || []).map((sel, i) => {
+        // suporte a dois formatos: { choices, home, away } ou legado array plano
+        const choices = Array.isArray(sel.choices) ? sel.choices : (Array.isArray(sel) ? sel : []);
+        const home    = sel.home  || `Time Casa ${i+1}`;
+        const away    = sel.away  || `Time Visitante ${i+1}`;
+
+        return `
+          <div class="game-row">
+            <span class="game-num">${i+1}.</span>
+            <span class="game-matchup">${home} x ${away}</span>
+            <span class="palpite">▶ ${optLabel(choices, home, away)}</span>
+            ${tipoBadge(choices.length)}
+          </div>`;
+      }).join('');
+
       return `
         <div class="card">
           <h3>Aposta ${bi + 1} — R$ ${Number(bet.price).toFixed(2)}</h3>
-          ${(bet.selections || []).map((sel, i) => {
-            const g = games[i] || {};
-            return `<div class="game-row">
-              <span>${i+1}. ${g.home||'?'} x ${g.away||'?'}</span>
-              <span class="palpite">▶ ${optLabel(sel, g)}</span>
-            </div>`;
-          }).join('')}
+          ${jogosHtml}
         </div>`;
     }).join('');
   };
-
-  function salvarEspelho() {
-    window.print();
-  }
 </script>
 </body>
 </html>
