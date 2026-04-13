@@ -257,7 +257,7 @@
 </div>
 
 <header>
-    <div class="header-left" id="header-concurso">Apostas Até<br><strong>17:30</strong></div>
+    <div class="header-left" id="header-concurso">Concurso<br><strong>001</strong></div>
     <div class="header-title">🏆 Donos do Palpite</div>
     <div class="header-right" id="header-data">Data<br><strong>--/--</strong></div>
 </header>
@@ -399,7 +399,7 @@
     // =========================================================
     const CONCURSO = {
         numero: "001",          // Número do concurso
-        data:   "2026-04-13"    // Data no formato AAAA-MM-DD
+        data:   "2025-04-12"    // Data no formato AAAA-MM-DD
     };
     // =========================================================
     // NÃO MEXA ABAIXO DESTA LINHA
@@ -417,6 +417,9 @@
             homeImg: jogo.homeImg || '',
             awayImg: jogo.awayImg || ''
         }));
+
+        // Persiste no localStorage para que espelho.html e outros pages possam ler
+        localStorage.setItem('adminGames', JSON.stringify(adminGames));
 
         // Aplica configuração do concurso
         document.getElementById('header-concurso').innerHTML =
